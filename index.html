@@ -3,88 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Property SaaS Stable Base</title>
+<title>Property Marketplace MY</title>
 
 <style>
 body{
-    margin:0;
-    font-family:Segoe UI, Arial;
-    background:#f4f6fb;
+margin:0;
+font-family:Segoe UI, Arial;
+background:#f4f6fb;
 }
 
 .header{
-    background:#0f172a;
-    color:white;
-    padding:15px;
-    display:flex;
-    justify-content:space-between;
+background:#0f172a;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
 }
 
 .box{
-    background:white;
-    padding:15px;
-    margin:20px auto;
-    max-width:420px;
-    border-radius:12px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+background:white;
+padding:15px;
+margin:15px auto;
+max-width:500px;
+border-radius:12px;
+box-shadow:0 8px 20px rgba(0,0,0,0.08);
 }
 
 input{
-    width:100%;
-    padding:10px;
-    margin:6px 0;
-    border-radius:8px;
-    border:1px solid #ddd;
+width:100%;
+padding:10px;
+margin:6px 0;
+border-radius:8px;
+border:1px solid #ddd;
 }
 
 button{
-    width:100%;
-    padding:10px;
-    margin-top:8px;
-    border:none;
-    border-radius:8px;
-    font-weight:bold;
-    cursor:pointer;
+width:100%;
+padding:10px;
+margin-top:8px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
 }
 
 .primary{background:#2563eb;color:white;}
 .dark{background:#0f172a;color:white;}
 .red{background:#ef4444;color:white;}
-.green{background:#22c55e;color:white;}
 
 .container{padding:15px;}
 
 .grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-    gap:15px;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:15px;
 }
 
 .card{
-    background:white;
-    padding:15px;
-    border-radius:12px;
-    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+background:white;
+padding:15px;
+border-radius:12px;
+box-shadow:0 6px 18px rgba(0,0,0,0.06);
 }
 
 .price{color:#16a34a;font-weight:bold;}
 
 .compareBox{
-    background:white;
-    margin-top:15px;
-    padding:15px;
-    border-radius:12px;
+background:white;
+padding:15px;
+margin-top:15px;
+border-radius:12px;
 }
 
 table{
-    width:100%;
-    border-collapse:collapse;
+width:100%;
+border-collapse:collapse;
 }
 
 td,th{
-    border:1px solid #ddd;
-    padding:8px;
-    text-align:center;
+border:1px solid #ddd;
+padding:8px;
+text-align:center;
 }
 </style>
 </head>
@@ -92,12 +91,12 @@ td,th{
 <body>
 
 <div class="header">
-<div>🏠 Property SaaS</div>
+<div>🏠 Property Marketplace</div>
 <div id="userStatus">Loading...</div>
 </div>
 
-<!-- LOGIN -->
-<div id="authView" class="box">
+<!-- AUTH -->
+<div id="authBox" class="box">
 <h3>Login</h3>
 
 <input id="email" placeholder="Email">
@@ -114,9 +113,23 @@ td,th{
 
 <button class="red" onclick="logout()">Logout</button>
 
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="box" style="display:none;">
+<h3>🧑‍💼 Admin Panel</h3>
+
+<input id="pname" placeholder="Name">
+<input id="plocation" placeholder="Location">
+<input id="ptype" placeholder="Type">
+<input id="pprice" placeholder="Price RM">
+
+<button class="primary" onclick="addProperty()">Add Property</button>
+</div>
+
+<!-- PROPERTY LIST -->
 <h3>Properties</h3>
 <div id="list" class="grid"></div>
 
+<!-- COMPARE -->
 <button class="primary" onclick="showCompare()">
 Compare (<span id="compareCount">0</span>)
 </button>
@@ -140,10 +153,13 @@ signOut
 import {
 getFirestore,
 collection,
-getDocs
+getDocs,
+addDoc,
+deleteDoc,
+doc,
+serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* CONFIG */
 const firebaseConfig = {
 apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
 authDomain: "roadtob-d0c2d.firebaseapp.com",
@@ -154,15 +170,19 @@ const appFirebase = initializeApp(firebaseConfig);
 const auth = getAuth(appFirebase);
 const db = getFirestore(appFirebase);
 
-/* DOM SAFE INIT */
-const authView = document.getElementById("authView");
-const appView = document.getElementById("app");
+/* DOM */
+const authBox = document.getElementById("authBox");
+const appBox = document.getElementById("app");
 const userStatus = document.getElementById("userStatus");
 const list = document.getElementById("list");
 
 /* STATE */
 let properties = [];
 let compare = [];
+let isAdmin = false;
+
+/* ADMIN EMAIL */
+const ADMIN_EMAIL = "admin@gmail.com";
 
 /* AUTH */
 window.signup = async () => {
@@ -188,104 +208,118 @@ await signOut(auth);
 compare = [];
 };
 
-/* SAFE AUTH FLOW (NO FLICKER) */
-authView.style.display = "block";
-appView.style.display = "none";
-
+/* AUTH STATE */
 onAuthStateChanged(auth, async (user) => {
 
-console.log("AUTH STATE:", user);
-
 if(!user){
-authView.style.display = "block";
-appView.style.display = "none";
+authBox.style.display = "block";
+appBox.style.display = "none";
 userStatus.innerText = "Not logged in";
 return;
 }
 
-/* LOCK UI FIRST */
-authView.style.display = "none";
-appView.style.display = "block";
+isAdmin = (user.email === ADMIN_EMAIL);
 
-userStatus.innerText = user.email;
+authBox.style.display = "none";
+appBox.style.display = "block";
 
-/* LOAD DATA */
+userStatus.innerText = isAdmin ? "Admin: " + user.email : user.email;
+
+document.getElementById("adminPanel").style.display =
+isAdmin ? "block" : "none";
+
 await load();
 
 });
 
-/* LOAD FIRESTORE (SAFE) */
+/* LOAD */
 async function load(){
-try{
 
 const snap = await getDocs(collection(db,"properties"));
 
-console.log("Firestore docs:", snap.size);
-
-properties = [];
-
-snap.forEach(d=>{
-properties.push(d.data());
-});
+properties = snap.docs.map(d => ({
+id: d.id,
+...d.data()
+}));
 
 render();
 
-}catch(err){
-console.error("LOAD ERROR:", err);
-list.innerHTML = "<p>Failed to load data</p>";
-}
 }
 
 /* RENDER */
 function render(){
 
-if(!properties || properties.length === 0){
-list.innerHTML = "<p>No properties found in Firestore.</p>";
+if(properties.length === 0){
+list.innerHTML = "<p>No properties found</p>";
 return;
 }
 
 list.innerHTML = properties.map((p,i)=>`
 <div class="card">
-<h3>${p.name ?? "-"}</h3>
-<p>${p.location ?? "-"}</p>
-<p>${p.type ?? "-"}</p>
-<p class="price">RM ${p.price ?? 0}</p>
+<h3>${p.name}</h3>
+<p>${p.location}</p>
+<p>${p.type}</p>
+<p class="price">RM ${p.price}</p>
 
-<button class="primary" onclick="addCompare(${i})">
-Add to Compare
-</button>
+<button onclick="addCompare(${i})">Compare</button>
+<button onclick="addFav('${p.id}')">Favourite</button>
+
+${isAdmin ? `
+<button style="background:red;color:white"
+onclick="deleteProperty('${p.id}')">
+Delete
+</button>` : ""}
 
 </div>
 `).join("");
 
 }
 
+/* ADD PROPERTY (ADMIN) */
+window.addProperty = async function(){
+
+await addDoc(collection(db,"properties"),{
+name: pname.value,
+location: plocation.value,
+type: ptype.value,
+price: Number(pprice.value),
+createdAt: serverTimestamp()
+});
+
+load();
+
+};
+
+/* DELETE */
+window.deleteProperty = async function(id){
+
+if(!isAdmin) return;
+
+await deleteDoc(doc(db,"properties",id));
+
+load();
+
+};
+
 /* COMPARE */
 window.addCompare = function(i){
-
-const p = properties[i];
-
-if(!p){
-alert("Invalid property");
-return;
-}
 
 if(compare.length >= 3){
 alert("Max 3 only");
 return;
 }
 
-compare.push(p);
+compare.push(properties[i]);
 
 document.getElementById("compareCount").innerText = compare.length;
 
 };
 
-/* COMPARE TABLE */
+/* SHOW COMPARE */
 window.showCompare = function(){
 
 if(compare.length < 2){
-alert("Select at least 2 properties");
+alert("Select at least 2");
 return;
 }
 
@@ -315,6 +349,21 @@ ${compare.map(p=>`<td>${p.type}</td>`).join("")}
 
 </table>
 `;
+
+};
+
+/* FAVOURITES */
+window.addFav = function(id){
+
+let fav = JSON.parse(localStorage.getItem("fav") || "[]");
+
+if(!fav.includes(id)){
+fav.push(id);
+}
+
+localStorage.setItem("fav", JSON.stringify(fav));
+
+alert("Added to favourites");
 
 };
 
