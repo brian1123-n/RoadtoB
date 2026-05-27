@@ -3,32 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY</title>
+<title>PropertyIntel MY - Level 100</title>
 
 <style>
 body{
     margin:0;
     font-family:Segoe UI, Arial;
-    background:#f1f5f9;
+    background:#f4f6fb;
 }
 
-/* NAV */
-.nav{
-    background:linear-gradient(135deg,#0f172a,#1e3a8a);
+/* HEADER */
+.header{
+    background:#0f172a;
     color:white;
     padding:15px;
     display:flex;
     justify-content:space-between;
 }
 
-/* LOGIN */
-.box{
-    background:white;
-    margin:20px auto;
+/* CONTAINERS */
+.container{
+    max-width:1200px;
+    margin:auto;
     padding:15px;
-    max-width:420px;
+}
+
+/* LOGIN */
+.authBox{
+    max-width:400px;
+    margin:60px auto;
+    background:white;
+    padding:20px;
     border-radius:12px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+    box-shadow:0 10px 20px rgba(0,0,0,0.08);
 }
 
 input{
@@ -49,17 +56,34 @@ button{
     cursor:pointer;
 }
 
-.btn1{background:#1d4ed8;color:white;}
-.btn2{background:#0f172a;color:white;}
-.btn3{background:#22c55e;color:white;}
-.btn4{background:#ef4444;color:white;}
+.primary{background:#2563eb;color:white;}
+.dark{background:#0f172a;color:white;}
+.red{background:#ef4444;color:white;}
+.green{background:#22c55e;color:white;}
+
+/* DASHBOARD */
+.dashboard{
+    display:none;
+}
+
+/* FILTER BAR */
+.filters{
+    display:flex;
+    gap:10px;
+    margin:10px 0;
+}
+
+.filters input, .filters select{
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+}
 
 /* GRID */
 .grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
     gap:15px;
-    padding:15px;
 }
 
 /* CARD */
@@ -67,22 +91,40 @@ button{
     background:white;
     padding:15px;
     border-radius:12px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.06);
+    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+    position:relative;
 }
 
 .price{
-    font-size:18px;
-    font-weight:bold;
     color:#16a34a;
+    font-weight:bold;
+}
+
+/* TAGS */
+.tag{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:#f59e0b;
+    padding:5px 8px;
+    border-radius:20px;
+    font-size:10px;
+    color:white;
+}
+
+/* COMPARE PANEL */
+.comparePanel{
+    background:white;
+    padding:15px;
+    margin-top:20px;
+    border-radius:12px;
 }
 
 /* TABLE */
 table{
     width:100%;
     border-collapse:collapse;
-    background:white;
 }
-
 td,th{
     border:1px solid #ddd;
     padding:8px;
@@ -93,45 +135,47 @@ td,th{
 
 <body>
 
-<!-- NAV -->
-<div class="nav">
+<!-- HEADER -->
+<div class="header">
     <div>🏠 PropertyIntel MY</div>
-    <div id="planTag">FREE</div>
+    <div id="userStatus">Not logged in</div>
 </div>
 
-<!-- LOGIN -->
-<div id="loginPage">
-
-<div class="box">
-    <h3>Login / Register</h3>
+<!-- AUTH -->
+<div id="authView" class="authBox">
+    <h2>Login</h2>
 
     <input id="email" placeholder="Email">
     <input id="password" placeholder="Password">
 
-    <button class="btn1" onclick="signup()">Sign Up</button>
-    <button class="btn2" onclick="login()">Login</button>
-
-    <div id="status">Not logged in</div>
-</div>
-
+    <button class="primary" onclick="signup()">Sign Up</button>
+    <button class="dark" onclick="login()">Login</button>
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboard" style="display:none;">
+<div id="app" class="dashboard container">
 
-<div style="padding:10px;text-align:center;">
-    <button class="btn4" onclick="logout()">Logout</button>
-</div>
+    <button class="red" onclick="logout()">Logout</button>
 
-<div style="padding:10px;text-align:center;">
-    <button class="btn3" onclick="showCompare()">
-        Compare 📊 (<span id="compareCount">0</span>)
+    <!-- FILTERS -->
+    <div class="filters">
+        <input id="search" placeholder="Search property..." onkeyup="render()">
+        <select id="typeFilter" onchange="render()">
+            <option value="">All</option>
+            <option value="Condo">Condo</option>
+            <option value="Apartment">Apartment</option>
+        </select>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid" id="list"></div>
+
+    <!-- COMPARE -->
+    <button class="green" onclick="showCompare()">
+        Compare (<span id="compareCount">0</span>)
     </button>
-</div>
 
-<div class="grid" id="list"></div>
-
-<div id="compareBox" style="padding:15px;"></div>
+    <div class="comparePanel" id="compareBox"></div>
 
 </div>
 
@@ -150,13 +194,9 @@ signOut
 import {
 getFirestore,
 collection,
-getDocs,
-doc,
-setDoc,
-getDoc
+getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* CONFIG */
 const firebaseConfig = {
 apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
 authDomain: "roadtob-d0c2d.firebaseapp.com",
@@ -168,129 +208,120 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let properties = [];
-let compareList = [];
+let compare = [];
 
 /* AUTH */
-window.signup = async function(){
+window.signup = async ()=>{
     await createUserWithEmailAndPassword(auth,email.value,password.value);
     alert("Signup success");
 };
 
-window.login = async function(){
+window.login = async ()=>{
     await signInWithEmailAndPassword(auth,email.value,password.value);
     alert("Login success");
 };
 
-window.logout = async function(){
+window.logout = async ()=>{
     await signOut(auth);
-
-    compareList = [];
-    compareCount.innerText = "0";
-    compareBox.innerHTML = "";
-
-    loginPage.style.display = "block";
-    dashboard.style.display = "none";
-
-    status.innerText = "Logged out";
-    planTag.innerText = "FREE";
 };
 
 /* AUTH STATE */
-onAuthStateChanged(auth, async (user)=>{
+onAuthStateChanged(auth,(user)=>{
     if(!user){
-        loginPage.style.display = "block";
-        dashboard.style.display = "none";
+        authView.style.display="block";
+        app.style.display="none";
         return;
     }
 
-    loginPage.style.display = "none";
-    dashboard.style.display = "block";
+    authView.style.display="none";
+    app.style.display="block";
 
-    status.innerText = "Logged in: " + user.email;
+    userStatus.innerText = user.email;
 
     load();
 });
 
-/* LOAD */
+/* LOAD DATA */
 async function load(){
     const snap = await getDocs(collection(db,"properties"));
+
     properties = snap.docs.map(d=>d.data());
+
     render();
 }
 
 /* RENDER */
-function render(){
+window.render = function(){
 
-list.innerHTML = "";
+let keyword = search.value?.toLowerCase() || "";
+let type = typeFilter.value;
 
-properties.forEach((p,index)=>{
+let filtered = properties.filter(p=>
+    p.name.toLowerCase().includes(keyword) &&
+    (type==="" || p.type===type)
+);
 
-    let card = document.createElement("div");
-    card.className = "card";
+list.innerHTML = filtered.map(p=>`
+<div class="card">
+<div class="tag">HOT</div>
 
-    card.innerHTML = `
-        <h3>${p.name}</h3>
-        <p>${p.location}</p>
-        <p>${p.type}</p>
-        <p class="price">RM ${p.price}</p>
-        <button class="btn1">Add to Compare</button>
-    `;
+<h3>${p.name}</h3>
+<p>${p.location}</p>
+<p>${p.type}</p>
+<p class="price">RM ${p.price}</p>
 
-    card.querySelector("button").onclick = function(){
-        addCompare(p);
-    };
+<button class="primary" onclick="addCompare('${p.name}')">
+Add Compare
+</button>
 
-    list.appendChild(card);
-});
-
-}
+</div>
+`).join("");
+};
 
 /* COMPARE */
-window.addCompare = function(p){
+window.addCompare = function(name){
 
-if(compareList.length >= 3){
-    alert("Max 3 only");
+let p = properties.find(x=>x.name===name);
+
+if(compare.length>=3){
+    alert("Max 3");
     return;
 }
 
-compareList.push(p);
-compareCount.innerText = compareList.length;
-
-alert("Added to compare");
+compare.push(p);
+compareCount.innerText = compare.length;
 };
 
 /* SHOW COMPARE */
 window.showCompare = function(){
 
-if(compareList.length < 2){
-    alert("Select at least 2 properties");
+if(compare.length<2){
+    alert("Select at least 2");
     return;
 }
 
 compareBox.innerHTML = `
-<h2>Comparison Table</h2>
-
+<h3>Comparison</h3>
 <table>
 <tr>
 <th>Field</th>
-${compareList.map(p=>`<th>${p.name}</th>`).join("")}
+${compare.map(p=>`<th>${p.name}</th>`).join("")}
 </tr>
 
 <tr>
 <td>Price</td>
-${compareList.map(p=>`<td>RM ${p.price}</td>`).join("")}
+${compare.map(p=>`<td>${p.price}</td>`).join("")}
 </tr>
 
 <tr>
 <td>Location</td>
-${compareList.map(p=>`<td>${p.location}</td>`).join("")}
+${compare.map(p=>`<td>${p.location}</td>`).join("")}
 </tr>
 
 <tr>
 <td>Type</td>
-${compareList.map(p=>`<td>${p.type}</td>`).join("")}
+${compare.map(p=>`<td>${p.type}</td>`).join("")}
 </tr>
-
 </table>
 `;
 };
