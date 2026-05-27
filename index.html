@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - Pro SaaS</title>
+<title>PropertyIntel MY</title>
 
 <style>
 body{
     margin:0;
-    font-family:"Segoe UI", Arial;
+    font-family:Segoe UI, Arial;
     background:#f1f5f9;
 }
 
@@ -21,13 +21,13 @@ body{
     justify-content:space-between;
 }
 
-/* BOX */
+/* LOGIN */
 .box{
     background:white;
-    margin:15px auto;
+    margin:20px auto;
     padding:15px;
+    max-width:420px;
     border-radius:12px;
-    max-width:500px;
     box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
 
@@ -99,7 +99,7 @@ td,th{
     <div id="planTag">FREE</div>
 </div>
 
-<!-- LOGIN PAGE -->
+<!-- LOGIN -->
 <div id="loginPage">
 
 <div class="box">
@@ -123,21 +123,6 @@ td,th{
     <button class="btn4" onclick="logout()">Logout</button>
 </div>
 
-<!-- LOAN CALCULATOR -->
-<div class="box">
-    <h3>🏠 Malaysia Housing Loan Calculator</h3>
-
-    <input id="price" placeholder="Property Price (RM)">
-    <input id="down" placeholder="Down Payment (%) e.g. 10">
-    <input id="rate" placeholder="Interest Rate (%) e.g. 4.2">
-    <input id="year" placeholder="Loan Tenure (Years) e.g. 35">
-
-    <button class="btn3" onclick="calcLoan()">Calculate</button>
-
-    <div id="loanResult"></div>
-</div>
-
-<!-- COMPARE -->
 <div style="padding:10px;text-align:center;">
     <button class="btn3" onclick="showCompare()">
         Compare 📊 (<span id="compareCount">0</span>)
@@ -171,6 +156,7 @@ setDoc,
 getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* CONFIG */
 const firebaseConfig = {
 apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
 authDomain: "roadtob-d0c2d.firebaseapp.com",
@@ -186,12 +172,7 @@ let compareList = [];
 
 /* AUTH */
 window.signup = async function(){
-    const u = await createUserWithEmailAndPassword(auth,email.value,password.value);
-
-    await setDoc(doc(db,"users",u.user.uid),{
-        plan:"free"
-    });
-
+    await createUserWithEmailAndPassword(auth,email.value,password.value);
     alert("Signup success");
 };
 
@@ -227,9 +208,6 @@ onAuthStateChanged(auth, async (user)=>{
 
     status.innerText = "Logged in: " + user.email;
 
-    const snap = await getDoc(doc(db,"users",user.uid));
-    planTag.innerText = (snap.data()?.plan || "free").toUpperCase();
-
     load();
 });
 
@@ -243,22 +221,27 @@ async function load(){
 /* RENDER */
 function render(){
 
-list.innerHTML = properties.map(p=>`
+list.innerHTML = "";
 
-<div class="card">
-<h3>${p.name}</h3>
-<p>${p.location}</p>
-<p>${p.type}</p>
-<p class="price">RM ${p.price}</p>
+properties.forEach((p,index)=>{
 
-<button onclick='addCompare(${JSON.stringify(p)})'
-style="background:#1d4ed8;color:white;border:none;padding:8px;border-radius:6px;width:100%;">
-Add to Compare
-</button>
+    let card = document.createElement("div");
+    card.className = "card";
 
-</div>
+    card.innerHTML = `
+        <h3>${p.name}</h3>
+        <p>${p.location}</p>
+        <p>${p.type}</p>
+        <p class="price">RM ${p.price}</p>
+        <button class="btn1">Add to Compare</button>
+    `;
 
-`).join("");
+    card.querySelector("button").onclick = function(){
+        addCompare(p);
+    };
+
+    list.appendChild(card);
+});
 
 }
 
@@ -272,6 +255,8 @@ if(compareList.length >= 3){
 
 compareList.push(p);
 compareCount.innerText = compareList.length;
+
+alert("Added to compare");
 };
 
 /* SHOW COMPARE */
@@ -308,39 +293,6 @@ ${compareList.map(p=>`<td>${p.type}</td>`).join("")}
 
 </table>
 `;
-};
-
-/* LOAN CALCULATOR */
-window.calcLoan = function(){
-
-let price = parseFloat(document.getElementById("price").value);
-let down = parseFloat(document.getElementById("down").value);
-let rate = parseFloat(document.getElementById("rate").value);
-let year = parseFloat(document.getElementById("year").value);
-
-if(!price || !down || !rate || !year){
-    alert("Fill all fields");
-    return;
-}
-
-let loan = price * (1 - down/100);
-let monthlyRate = rate/100/12;
-let months = year * 12;
-
-let monthly =
-(loan * monthlyRate) /
-(1 - Math.pow(1 + monthlyRate, -months));
-
-let total = monthly * months;
-
-document.getElementById("loanResult").innerHTML = `
-<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-top:10px;">
-<p><b>Loan:</b> RM ${loan.toFixed(2)}</p>
-<p><b>Monthly:</b> RM ${monthly.toFixed(2)}</p>
-<p><b>Total Repayment:</b> RM ${total.toFixed(2)}</p>
-</div>
-`;
-
 };
 
 </script>
