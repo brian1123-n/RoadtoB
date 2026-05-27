@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - Stable</title>
+<title>Property SaaS Stable Base</title>
 
 <style>
 body{
@@ -50,6 +50,7 @@ button{
 .primary{background:#2563eb;color:white;}
 .dark{background:#0f172a;color:white;}
 .red{background:#ef4444;color:white;}
+.green{background:#22c55e;color:white;}
 
 .container{padding:15px;}
 
@@ -70,8 +71,8 @@ button{
 
 .compareBox{
     background:white;
-    padding:15px;
     margin-top:15px;
+    padding:15px;
     border-radius:12px;
 }
 
@@ -91,12 +92,12 @@ td,th{
 <body>
 
 <div class="header">
-<div>🏠 PropertyIntel MY</div>
+<div>🏠 Property SaaS</div>
 <div id="userStatus">Loading...</div>
 </div>
 
 <!-- LOGIN -->
-<div id="authBox" class="box">
+<div id="authView" class="box">
 <h3>Login</h3>
 
 <input id="email" placeholder="Email">
@@ -114,7 +115,7 @@ td,th{
 <button class="red" onclick="logout()">Logout</button>
 
 <h3>Properties</h3>
-<div class="grid" id="list"></div>
+<div id="list" class="grid"></div>
 
 <button class="primary" onclick="showCompare()">
 Compare (<span id="compareCount">0</span>)
@@ -153,12 +154,13 @@ const appFirebase = initializeApp(firebaseConfig);
 const auth = getAuth(appFirebase);
 const db = getFirestore(appFirebase);
 
-/* DOM FIX (IMPORTANT) */
-const authBox = document.getElementById("authBox");
-const appBox = document.getElementById("app");
+/* DOM SAFE INIT */
+const authView = document.getElementById("authView");
+const appView = document.getElementById("app");
 const userStatus = document.getElementById("userStatus");
 const list = document.getElementById("list");
 
+/* STATE */
 let properties = [];
 let compare = [];
 
@@ -186,65 +188,68 @@ await signOut(auth);
 compare = [];
 };
 
-/* AUTH STATE (FIXED STABLE FLOW) */
+/* SAFE AUTH FLOW (NO FLICKER) */
+authView.style.display = "block";
+appView.style.display = "none";
+
 onAuthStateChanged(auth, async (user) => {
 
-console.log("AUTH:", user);
+console.log("AUTH STATE:", user);
 
 if(!user){
-authBox.style.display = "block";
-appBox.style.display = "none";
+authView.style.display = "block";
+appView.style.display = "none";
 userStatus.innerText = "Not logged in";
 return;
 }
 
-/* LOCK UI FIRST (prevents flicker) */
-authBox.style.display = "none";
-appBox.style.display = "block";
+/* LOCK UI FIRST */
+authView.style.display = "none";
+appView.style.display = "block";
 
 userStatus.innerText = user.email;
 
-/* LOAD DATA AFTER LOGIN */
+/* LOAD DATA */
 await load();
 
 });
 
-/* LOAD FIRESTORE */
+/* LOAD FIRESTORE (SAFE) */
 async function load(){
 try{
 
 const snap = await getDocs(collection(db,"properties"));
 
+console.log("Firestore docs:", snap.size);
+
 properties = [];
 
-snap.forEach(doc=>{
-properties.push(doc.data());
+snap.forEach(d=>{
+properties.push(d.data());
 });
-
-console.log("Loaded:", properties.length);
 
 render();
 
 }catch(err){
-console.error("Firestore error:",err);
-list.innerHTML = "<p>Failed to load properties</p>";
+console.error("LOAD ERROR:", err);
+list.innerHTML = "<p>Failed to load data</p>";
 }
 }
 
 /* RENDER */
 function render(){
 
-if(properties.length === 0){
+if(!properties || properties.length === 0){
 list.innerHTML = "<p>No properties found in Firestore.</p>";
 return;
 }
 
 list.innerHTML = properties.map((p,i)=>`
 <div class="card">
-<h3>${p.name || "-"}</h3>
-<p>${p.location || "-"}</p>
-<p>${p.type || "-"}</p>
-<p class="price">RM ${p.price || 0}</p>
+<h3>${p.name ?? "-"}</h3>
+<p>${p.location ?? "-"}</p>
+<p>${p.type ?? "-"}</p>
+<p class="price">RM ${p.price ?? 0}</p>
 
 <button class="primary" onclick="addCompare(${i})">
 Add to Compare
@@ -258,7 +263,7 @@ Add to Compare
 /* COMPARE */
 window.addCompare = function(i){
 
-let p = properties[i];
+const p = properties[i];
 
 if(!p){
 alert("Invalid property");
@@ -271,11 +276,12 @@ return;
 }
 
 compare.push(p);
+
 document.getElementById("compareCount").innerText = compare.length;
 
 };
 
-/* SHOW COMPARE */
+/* COMPARE TABLE */
 window.showCompare = function(){
 
 if(compare.length < 2){
@@ -309,6 +315,7 @@ ${compare.map(p=>`<td>${p.type}</td>`).join("")}
 
 </table>
 `;
+
 };
 
 </script>
