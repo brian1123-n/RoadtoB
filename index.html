@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Property Marketplace MY</title>
+<title>PropTech SaaS MY</title>
 
 <style>
 body{
 margin:0;
-font-family:Segoe UI, Arial;
+font-family:Segoe UI;
 background:#f4f6fb;
 }
 
@@ -20,91 +20,93 @@ display:flex;
 justify-content:space-between;
 }
 
-.box{
-background:white;
+.container{
 padding:15px;
-margin:15px auto;
-max-width:500px;
-border-radius:12px;
-box-shadow:0 8px 20px rgba(0,0,0,0.08);
 }
 
-input{
-width:100%;
-padding:10px;
-margin:6px 0;
-border-radius:8px;
-border:1px solid #ddd;
-}
-
-button{
-width:100%;
-padding:10px;
-margin-top:8px;
-border:none;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
-}
-
-.primary{background:#2563eb;color:white;}
-.dark{background:#0f172a;color:white;}
-.red{background:#ef4444;color:white;}
-
-.container{padding:15px;}
-
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+.layout{
+display:flex;
 gap:15px;
 }
 
+/* PANELS */
+.panel{
+background:white;
+padding:15px;
+border-radius:12px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+/* LEFT */
+.left{
+width:20%;
+}
+
+/* CENTER */
+.center{
+width:55%;
+}
+
+/* RIGHT */
+.right{
+width:25%;
+}
+
+/* CARD */
 .card{
 background:white;
 padding:15px;
 border-radius:12px;
 box-shadow:0 6px 18px rgba(0,0,0,0.06);
+margin-bottom:10px;
+cursor:pointer;
+transition:0.2s;
+}
+.card:hover{
+transform:translateY(-3px);
+}
+
+/* BUTTON */
+button{
+width:100%;
+padding:10px;
+margin-top:6px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.primary{background:#2563eb;color:white;}
+.red{background:#ef4444;color:white;}
+
+/* INPUT */
+input,select{
+width:100%;
+padding:8px;
+margin:5px 0;
+border-radius:8px;
+border:1px solid #ddd;
 }
 
 .price{color:#16a34a;font-weight:bold;}
-
-.compareBox{
-background:white;
-padding:15px;
-margin-top:15px;
-border-radius:12px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-}
-
-td,th{
-border:1px solid #ddd;
-padding:8px;
-text-align:center;
-}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<div>🏠 Property Marketplace</div>
+<div>🏠 PropTech SaaS</div>
 <div id="userStatus">Loading...</div>
 </div>
 
-<!-- AUTH -->
-<div id="authBox" class="box">
+<!-- LOGIN -->
+<div id="authBox" class="panel" style="max-width:400px;margin:20px auto;">
 <h3>Login</h3>
-
 <input id="email" placeholder="Email">
 <input id="password" placeholder="Password">
-
 <button class="primary" onclick="signup()">Sign Up</button>
-<button class="dark" onclick="login()">Login</button>
-
+<button class="primary" onclick="login()">Login</button>
 <div id="msg"></div>
 </div>
 
@@ -113,29 +115,39 @@ text-align:center;
 
 <button class="red" onclick="logout()">Logout</button>
 
-<!-- ADMIN PANEL -->
-<div id="adminPanel" class="box" style="display:none;">
-<h3>🧑‍💼 Admin Panel</h3>
+<div class="layout">
 
-<input id="pname" placeholder="Name">
-<input id="plocation" placeholder="Location">
-<input id="ptype" placeholder="Type">
-<input id="pprice" placeholder="Price RM">
+<!-- LEFT FILTER -->
+<div class="panel left">
+<h3>Filters</h3>
 
-<button class="primary" onclick="addProperty()">Add Property</button>
+<input id="search" placeholder="Search..." onkeyup="render()">
+
+<select id="typeFilter" onchange="render()">
+<option value="">All</option>
+<option value="Condo">Condo</option>
+<option value="Landed">Landed</option>
+</select>
+
 </div>
 
-<!-- PROPERTY LIST -->
+<!-- CENTER -->
+<div class="panel center">
 <h3>Properties</h3>
-<div id="list" class="grid"></div>
+<div id="list"></div>
+</div>
 
-<!-- COMPARE -->
-<button class="primary" onclick="showCompare()">
-Compare (<span id="compareCount">0</span>)
-</button>
+<!-- RIGHT -->
+<div class="panel right">
+<h3>Investment Tool</h3>
 
-<div id="compareBox" class="compareBox"></div>
+<div id="detailPanel">
+<p>Select property</p>
+</div>
 
+</div>
+
+</div>
 </div>
 
 <!-- FIREBASE -->
@@ -153,13 +165,10 @@ signOut
 import {
 getFirestore,
 collection,
-getDocs,
-addDoc,
-deleteDoc,
-doc,
-serverTimestamp
+getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* CONFIG */
 const firebaseConfig = {
 apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
 authDomain: "roadtob-d0c2d.firebaseapp.com",
@@ -176,13 +185,7 @@ const appBox = document.getElementById("app");
 const userStatus = document.getElementById("userStatus");
 const list = document.getElementById("list");
 
-/* STATE */
 let properties = [];
-let compare = [];
-let isAdmin = false;
-
-/* ADMIN EMAIL */
-const ADMIN_EMAIL = "admin@gmail.com";
 
 /* AUTH */
 window.signup = async () => {
@@ -205,28 +208,21 @@ msg.innerText = e.message;
 
 window.logout = async () => {
 await signOut(auth);
-compare = [];
 };
 
 /* AUTH STATE */
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, async (user)=>{
 
 if(!user){
-authBox.style.display = "block";
-appBox.style.display = "none";
-userStatus.innerText = "Not logged in";
+authBox.style.display="block";
+appBox.style.display="none";
 return;
 }
 
-isAdmin = (user.email === ADMIN_EMAIL);
+authBox.style.display="none";
+appBox.style.display="block";
 
-authBox.style.display = "none";
-appBox.style.display = "block";
-
-userStatus.innerText = isAdmin ? "Admin: " + user.email : user.email;
-
-document.getElementById("adminPanel").style.display =
-isAdmin ? "block" : "none";
+userStatus.innerText = user.email;
 
 await load();
 
@@ -237,10 +233,7 @@ async function load(){
 
 const snap = await getDocs(collection(db,"properties"));
 
-properties = snap.docs.map(d => ({
-id: d.id,
-...d.data()
-}));
+properties = snap.docs.map(d=>d.data());
 
 render();
 
@@ -249,123 +242,63 @@ render();
 /* RENDER */
 function render(){
 
-if(properties.length === 0){
-list.innerHTML = "<p>No properties found</p>";
-return;
-}
+let keyword = search?.value?.toLowerCase() || "";
+let type = typeFilter?.value || "";
 
-list.innerHTML = properties.map((p,i)=>`
-<div class="card">
+let filtered = properties.filter(p=>
+p.name.toLowerCase().includes(keyword) &&
+(type === "" || p.type === type)
+);
+
+list.innerHTML = filtered.map((p,i)=>`
+<div class="card" onclick="openDetail(${i})">
 <h3>${p.name}</h3>
 <p>${p.location}</p>
 <p>${p.type}</p>
 <p class="price">RM ${p.price}</p>
-
-<button onclick="addCompare(${i})">Compare</button>
-<button onclick="addFav('${p.id}')">Favourite</button>
-
-${isAdmin ? `
-<button style="background:red;color:white"
-onclick="deleteProperty('${p.id}')">
-Delete
-</button>` : ""}
-
 </div>
 `).join("");
 
 }
 
-/* ADD PROPERTY (ADMIN) */
-window.addProperty = async function(){
+/* DETAIL + INVESTMENT */
+window.openDetail = function(i){
 
-await addDoc(collection(db,"properties"),{
-name: pname.value,
-location: plocation.value,
-type: ptype.value,
-price: Number(pprice.value),
-createdAt: serverTimestamp()
-});
+let p = properties[i];
 
-load();
+let rent = p.price * 0.004;
+let roi = (rent*12/p.price)*100;
 
-};
+let loan = calcLoan(p.price,10,4.2,35);
 
-/* DELETE */
-window.deleteProperty = async function(id){
+document.getElementById("detailPanel").innerHTML = `
 
-if(!isAdmin) return;
+<h3>${p.name}</h3>
+<p>${p.location}</p>
 
-await deleteDoc(doc(db,"properties",id));
+<hr>
 
-load();
+<h4>💰 Investment</h4>
 
-};
+<p>Rent: RM ${rent.toFixed(0)}</p>
+<p>ROI: ${roi.toFixed(2)}%</p>
+<p>Loan: RM ${loan.monthly.toFixed(0)}</p>
+<p>Cashflow: RM ${(rent-loan.monthly).toFixed(0)}</p>
 
-/* COMPARE */
-window.addCompare = function(i){
-
-if(compare.length >= 3){
-alert("Max 3 only");
-return;
-}
-
-compare.push(properties[i]);
-
-document.getElementById("compareCount").innerText = compare.length;
-
-};
-
-/* SHOW COMPARE */
-window.showCompare = function(){
-
-if(compare.length < 2){
-alert("Select at least 2");
-return;
-}
-
-document.getElementById("compareBox").innerHTML = `
-<h3>Comparison</h3>
-
-<table>
-<tr>
-<th>Field</th>
-${compare.map(p=>`<th>${p.name}</th>`).join("")}
-</tr>
-
-<tr>
-<td>Price</td>
-${compare.map(p=>`<td>${p.price}</td>`).join("")}
-</tr>
-
-<tr>
-<td>Location</td>
-${compare.map(p=>`<td>${p.location}</td>`).join("")}
-</tr>
-
-<tr>
-<td>Type</td>
-${compare.map(p=>`<td>${p.type}</td>`).join("")}
-</tr>
-
-</table>
 `;
-
 };
 
-/* FAVOURITES */
-window.addFav = function(id){
+/* LOAN */
+function calcLoan(price,down,rate,year){
 
-let fav = JSON.parse(localStorage.getItem("fav") || "[]");
+let loan = price*(1-down/100);
+let r = rate/100/12;
+let n = year*12;
 
-if(!fav.includes(id)){
-fav.push(id);
+let monthly = (loan*r)/(1-Math.pow(1+r,-n));
+
+return {monthly};
 }
-
-localStorage.setItem("fav", JSON.stringify(fav));
-
-alert("Added to favourites");
-
-};
 
 </script>
 
