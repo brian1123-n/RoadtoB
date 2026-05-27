@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - SaaS</title>
+<title>PropertyIntel MY - Pro SaaS</title>
 
 <style>
 body{
@@ -19,14 +19,6 @@ body{
     padding:15px;
     display:flex;
     justify-content:space-between;
-    align-items:center;
-}
-
-.badge{
-    background:#22c55e;
-    padding:5px 10px;
-    border-radius:20px;
-    font-size:12px;
 }
 
 /* BOX */
@@ -35,7 +27,7 @@ body{
     margin:15px auto;
     padding:15px;
     border-radius:12px;
-    max-width:420px;
+    max-width:500px;
     box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
 
@@ -62,11 +54,6 @@ button{
 .btn3{background:#22c55e;color:white;}
 .btn4{background:#ef4444;color:white;}
 
-/* FILTER */
-.filter{
-    padding:10px 15px;
-}
-
 /* GRID */
 .grid{
     display:grid;
@@ -81,7 +68,6 @@ button{
     padding:15px;
     border-radius:12px;
     box-shadow:0 8px 20px rgba(0,0,0,0.06);
-    position:relative;
 }
 
 .price{
@@ -90,22 +76,7 @@ button{
     color:#16a34a;
 }
 
-.badgeHot{
-    position:absolute;
-    top:10px;
-    right:10px;
-    background:#f59e0b;
-    color:white;
-    padding:4px 8px;
-    font-size:10px;
-    border-radius:20px;
-}
-
-/* COMPARE */
-.compareBox{
-    padding:15px;
-}
-
+/* TABLE */
 table{
     width:100%;
     border-collapse:collapse;
@@ -125,10 +96,12 @@ td,th{
 <!-- NAV -->
 <div class="nav">
     <div>🏠 PropertyIntel MY</div>
-    <div id="planTag" class="badge">FREE</div>
+    <div id="planTag">FREE</div>
 </div>
 
-<!-- LOGIN -->
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+
 <div class="box">
     <h3>Login / Register</h3>
 
@@ -138,23 +111,44 @@ td,th{
     <button class="btn1" onclick="signup()">Sign Up</button>
     <button class="btn2" onclick="login()">Login</button>
 
-    <button class="btn4" onclick="logout()">Logout</button>
-
     <div id="status">Not logged in</div>
 </div>
 
-<!-- COMPARE BUTTON -->
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+
+<div style="padding:10px;text-align:center;">
+    <button class="btn4" onclick="logout()">Logout</button>
+</div>
+
+<!-- LOAN CALCULATOR -->
+<div class="box">
+    <h3>🏠 Malaysia Housing Loan Calculator</h3>
+
+    <input id="price" placeholder="Property Price (RM)">
+    <input id="down" placeholder="Down Payment (%) e.g. 10">
+    <input id="rate" placeholder="Interest Rate (%) e.g. 4.2">
+    <input id="year" placeholder="Loan Tenure (Years) e.g. 35">
+
+    <button class="btn3" onclick="calcLoan()">Calculate</button>
+
+    <div id="loanResult"></div>
+</div>
+
+<!-- COMPARE -->
 <div style="padding:10px;text-align:center;">
     <button class="btn3" onclick="showCompare()">
-        Compare Properties 📊 (<span id="compareCount">0</span>)
+        Compare 📊 (<span id="compareCount">0</span>)
     </button>
 </div>
 
-<!-- GRID -->
 <div class="grid" id="list"></div>
 
-<!-- COMPARE BOX -->
-<div class="compareBox" id="compareBox"></div>
+<div id="compareBox" style="padding:15px;"></div>
+
+</div>
 
 <!-- FIREBASE -->
 <script type="module">
@@ -177,7 +171,6 @@ setDoc,
 getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* CONFIG */
 const firebaseConfig = {
 apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
 authDomain: "roadtob-d0c2d.firebaseapp.com",
@@ -191,7 +184,7 @@ const db = getFirestore(app);
 let properties = [];
 let compareList = [];
 
-/* SIGNUP */
+/* AUTH */
 window.signup = async function(){
     const u = await createUserWithEmailAndPassword(auth,email.value,password.value);
 
@@ -202,57 +195,57 @@ window.signup = async function(){
     alert("Signup success");
 };
 
-/* LOGIN */
 window.login = async function(){
     await signInWithEmailAndPassword(auth,email.value,password.value);
     alert("Login success");
 };
 
-/* LOGOUT */
 window.logout = async function(){
     await signOut(auth);
 
     compareList = [];
     compareCount.innerText = "0";
     compareBox.innerHTML = "";
+
+    loginPage.style.display = "block";
+    dashboard.style.display = "none";
+
     status.innerText = "Logged out";
     planTag.innerText = "FREE";
-
-    alert("Logged out");
 };
 
 /* AUTH STATE */
 onAuthStateChanged(auth, async (user)=>{
     if(!user){
-        status.innerText = "Not logged in";
+        loginPage.style.display = "block";
+        dashboard.style.display = "none";
         return;
     }
 
-    const snap = await getDoc(doc(db,"users",user.uid));
+    loginPage.style.display = "none";
+    dashboard.style.display = "block";
 
     status.innerText = "Logged in: " + user.email;
+
+    const snap = await getDoc(doc(db,"users",user.uid));
     planTag.innerText = (snap.data()?.plan || "free").toUpperCase();
 
     load();
 });
 
-/* LOAD PROPERTIES */
+/* LOAD */
 async function load(){
     const snap = await getDocs(collection(db,"properties"));
-
     properties = snap.docs.map(d=>d.data());
-
     render();
 }
 
 /* RENDER */
-window.render = function(){
+function render(){
 
 list.innerHTML = properties.map(p=>`
 
 <div class="card">
-<div class="badgeHot">HOT</div>
-
 <h3>${p.name}</h3>
 <p>${p.location}</p>
 <p>${p.type}</p>
@@ -267,9 +260,9 @@ Add to Compare
 
 `).join("");
 
-};
+}
 
-/* ADD COMPARE */
+/* COMPARE */
 window.addCompare = function(p){
 
 if(compareList.length >= 3){
@@ -279,8 +272,6 @@ if(compareList.length >= 3){
 
 compareList.push(p);
 compareCount.innerText = compareList.length;
-
-alert("Added to compare");
 };
 
 /* SHOW COMPARE */
@@ -292,7 +283,7 @@ if(compareList.length < 2){
 }
 
 compareBox.innerHTML = `
-<h2>Comparison</h2>
+<h2>Comparison Table</h2>
 
 <table>
 <tr>
@@ -316,6 +307,38 @@ ${compareList.map(p=>`<td>${p.type}</td>`).join("")}
 </tr>
 
 </table>
+`;
+};
+
+/* LOAN CALCULATOR */
+window.calcLoan = function(){
+
+let price = parseFloat(document.getElementById("price").value);
+let down = parseFloat(document.getElementById("down").value);
+let rate = parseFloat(document.getElementById("rate").value);
+let year = parseFloat(document.getElementById("year").value);
+
+if(!price || !down || !rate || !year){
+    alert("Fill all fields");
+    return;
+}
+
+let loan = price * (1 - down/100);
+let monthlyRate = rate/100/12;
+let months = year * 12;
+
+let monthly =
+(loan * monthlyRate) /
+(1 - Math.pow(1 + monthlyRate, -months));
+
+let total = monthly * months;
+
+document.getElementById("loanResult").innerHTML = `
+<div style="background:#f8fafc;padding:10px;border-radius:10px;margin-top:10px;">
+<p><b>Loan:</b> RM ${loan.toFixed(2)}</p>
+<p><b>Monthly:</b> RM ${monthly.toFixed(2)}</p>
+<p><b>Total Repayment:</b> RM ${total.toFixed(2)}</p>
+</div>
 `;
 
 };
