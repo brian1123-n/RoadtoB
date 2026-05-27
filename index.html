@@ -5,11 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PropertyIntel MY - SaaS Platform</title>
 
-<!-- Firebase (backend) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
-
 <style>
 body{
     margin:0;
@@ -17,14 +12,12 @@ body{
     background:#f4f7fb;
 }
 
-/* HEADER */
 .header{
     background:linear-gradient(135deg,#0f172a,#1e3a8a);
     color:white;
     padding:20px;
 }
 
-/* AUTH BOX */
 .auth{
     background:white;
     margin:20px;
@@ -39,7 +32,6 @@ input{
     width:200px;
 }
 
-/* BUTTON */
 button{
     padding:10px 15px;
     background:#1e3a8a;
@@ -49,176 +41,142 @@ button{
     cursor:pointer;
 }
 
-/* DASHBOARD */
 .container{
     padding:20px;
-    display:flex;
-    flex-wrap:wrap;
-    gap:15px;
 }
 
 .card{
     background:white;
-    width:260px;
     padding:15px;
+    margin:10px;
     border-radius:10px;
     box-shadow:0 3px 10px rgba(0,0,0,0.08);
 }
-
-.price{
-    color:green;
-    font-weight:bold;
-}
-
-/* LOCK OVERLAY */
-.locked{
-    opacity:0.4;
-    position:relative;
-}
-
-.badge{
-    background:red;
-    color:white;
-    padding:3px 8px;
-    font-size:12px;
-    border-radius:5px;
-}
 </style>
+
 </head>
 
 <body>
 
 <div class="header">
-    <h2>PropertyIntel MY (Subscription SaaS MVP)</h2>
+<h2>PropertyIntel MY (Firebase SaaS Working)</h2>
 </div>
 
-<!-- AUTH -->
 <div class="auth">
-    <h3>Login / Register</h3>
+<h3>Login / Register</h3>
 
-    <input id="email" placeholder="Email">
-    <input id="password" placeholder="Password">
+<input id="email" placeholder="Email">
+<input id="password" placeholder="Password">
 
-    <button onclick="signup()">Sign Up</button>
-    <button onclick="login()">Login</button>
+<button onclick="signup()">Sign Up</button>
+<button onclick="login()">Login</button>
 
-    <p id="status">Not logged in</p>
+<p id="status">Not logged in</p>
 </div>
 
-<!-- DASHBOARD -->
-<div class="container" id="properties"></div>
+<div class="container" id="list"></div>
 
-<script>
+<!-- FIREBASE (MODERN SDK) -->
+<script type="module">
 
-/* ================= FIREBASE CONFIG ================= */
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { 
+    getAuth, 
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* YOUR FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
   authDomain: "roadtob-d0c2d.firebaseapp.com",
   projectId: "roadtob-d0c2d",
   storageBucket: "roadtob-d0c2d.firebasestorage.app",
   messagingSenderId: "795422777154",
-  appId: "1:795422777154:web:905f3a443b5bf1df1572db",
-  measurementId: "G-7QS7V33F29"
+  appId: "1:795422777154:web:905f3a443b5bf1df1572db"
 };
 
-// Initialize Firebase
+/* INIT */
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-/* ================= USER STATE ================= */
-let currentUser = null;
-let userPlan = "free";
-
-/* ================= AUTH ================= */
-function signup(){
+/* AUTH FUNCTIONS */
+window.signup = async function(){
     let email = document.getElementById("email").value;
     let pass = document.getElementById("password").value;
 
-    auth.createUserWithEmailAndPassword(email, pass)
-    .then(user=>{
-        db.collection("users").doc(user.user.uid).set({
+    try{
+        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+
+        await setDoc(doc(db, "users", userCred.user.uid), {
             email: email,
             plan: "free"
         });
-    });
+
+        alert("Signup success");
+    } catch(err){
+        alert(err.message);
+    }
 }
 
-function login(){
+window.login = async function(){
     let email = document.getElementById("email").value;
     let pass = document.getElementById("password").value;
 
-    auth.signInWithEmailAndPassword(email, pass);
+    try{
+        await signInWithEmailAndPassword(auth, email, pass);
+        alert("Login success");
+    } catch(err){
+        alert(err.message);
+    }
 }
 
-/* ================= AUTH STATE ================= */
-auth.onAuthStateChanged(user=>{
+/* USER STATE */
+onAuthStateChanged(auth, async (user)=>{
+
     if(user){
-        currentUser = user;
+        let docRef = doc(db, "users", user.uid);
+        let snap = await getDoc(docRef);
 
-        db.collection("users").doc(user.uid).get()
-        .then(doc=>{
-            userPlan = doc.data().plan;
+        let plan = snap.exists() ? snap.data().plan : "free";
 
-            document.getElementById("status").innerText =
-            "Logged in as " + user.email + " (" + userPlan + ")";
+        document.getElementById("status").innerText =
+        "Logged in: " + user.email + " (" + plan + ")";
 
-            loadProperties();
-        });
+        loadData(plan);
     }
 });
 
-/* ================= PROPERTY DATA ================= */
-let properties = [
-    {name:"Residensi Alpha", price:520000, size:750, location:"Cheras", premium:false},
-    {name:"SkyVista Residence", price:780000, size:900, location:"Kajang", premium:true},
-    {name:"Metro Heights", price:430000, size:680, location:"Setapak", premium:false},
-    {name:"Urban Suites", price:610000, size:820, location:"KL City", premium:true}
-];
+/* SAMPLE PROPERTY DATA */
+function loadData(plan){
 
-/* ================= LOAD PROPERTIES ================= */
-function loadProperties(){
+    let data = [
+        {name:"Residensi Alpha", price:520000},
+        {name:"SkyVista Residence", price:780000},
+        {name:"Metro Heights", price:430000}
+    ];
 
-    let container = document.getElementById("properties");
-    container.innerHTML = "";
+    let html = "";
 
-    properties.forEach(p=>{
-
-        let isLocked = p.premium && userPlan !== "pro";
-
-        container.innerHTML += `
-        <div class="card ${isLocked ? 'locked' : ''}">
-            <h3>${p.name} ${p.premium ? '<span class="badge">PRO</span>' : ''}</h3>
-            <p class="price">RM ${p.price}</p>
-            <p>${p.size} sqft</p>
-            <p>${p.location}</p>
-
-            ${isLocked ? '<p style="color:red;">Upgrade to PRO to view full details</p>' : ''}
+    data.forEach(p=>{
+        html += `
+        <div class="card">
+            <h3>${p.name}</h3>
+            <p>RM ${p.price}</p>
+            ${plan === "free" ? "<p style='color:red'>Upgrade to PRO for more insights</p>" : "<p style='color:green'>PRO unlocked insights</p>"}
         </div>`;
     });
-}
 
-/* ================= UPGRADE SIMULATION ================= */
-function upgradeToPro(){
-    if(!currentUser) return alert("Login first!");
-
-    db.collection("users").doc(currentUser.uid).update({
-        plan:"pro"
-    });
-
-    alert("Upgraded to PRO!");
+    document.getElementById("list").innerHTML = html;
 }
 
 </script>
