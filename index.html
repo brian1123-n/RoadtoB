@@ -2,18 +2,18 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropTech SaaS MY</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RoadToB Property Platform</title>
 
 <style>
 body{
 margin:0;
-font-family:Segoe UI;
-background:#f4f6fb;
+font-family:Arial;
+background:#f5f7fb;
 }
 
 .header{
-background:#0f172a;
+background:#111827;
 color:white;
 padding:15px;
 display:flex;
@@ -21,284 +21,504 @@ justify-content:space-between;
 }
 
 .container{
-padding:15px;
+padding:20px;
 }
 
 .layout{
-display:flex;
+display:grid;
+grid-template-columns:250px 1fr 320px;
+gap:20px;
+}
+
+.panel,.card{
+background:white;
+padding:15px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
 gap:15px;
 }
 
-/* PANELS */
-.panel{
-background:white;
-padding:15px;
-border-radius:12px;
-box-shadow:0 6px 20px rgba(0,0,0,0.08);
+input,select{
+width:100%;
+padding:10px;
+margin-top:8px;
+border:1px solid #ddd;
+border-radius:8px;
 }
 
-/* LEFT */
-.left{
-width:20%;
-}
-
-/* CENTER */
-.center{
-width:55%;
-}
-
-/* RIGHT */
-.right{
-width:25%;
-}
-
-/* CARD */
-.card{
-background:white;
-padding:15px;
-border-radius:12px;
-box-shadow:0 6px 18px rgba(0,0,0,0.06);
-margin-bottom:10px;
-cursor:pointer;
-transition:0.2s;
-}
-.card:hover{
-transform:translateY(-3px);
-}
-
-/* BUTTON */
 button{
 width:100%;
 padding:10px;
-margin-top:6px;
+margin-top:10px;
 border:none;
 border-radius:8px;
 cursor:pointer;
+}
+
+.primary{
+background:#2563eb;
+color:white;
+}
+
+.red{
+background:#ef4444;
+color:white;
+}
+
+.price{
+color:green;
 font-weight:bold;
 }
-
-.primary{background:#2563eb;color:white;}
-.red{background:#ef4444;color:white;}
-
-/* INPUT */
-input,select{
-width:100%;
-padding:8px;
-margin:5px 0;
-border-radius:8px;
-border:1px solid #ddd;
-}
-
-.price{color:#16a34a;font-weight:bold;}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<div>🏠 PropTech SaaS</div>
+<div>🏠 RoadToB Property</div>
 <div id="userStatus">Loading...</div>
 </div>
 
-<!-- LOGIN -->
-<div id="authBox" class="panel" style="max-width:400px;margin:20px auto;">
+<div id="authBox" class="panel" style="max-width:400px;margin:30px auto;">
 <h3>Login</h3>
+
 <input id="email" placeholder="Email">
-<input id="password" placeholder="Password">
-<button class="primary" onclick="signup()">Sign Up</button>
-<button class="primary" onclick="login()">Login</button>
+<input id="password" type="password" placeholder="Password">
+
+<button class="primary" onclick="signup()">
+Sign Up
+</button>
+
+<button class="primary" onclick="login()">
+Login
+</button>
+
 <div id="msg"></div>
 </div>
 
-<!-- APP -->
 <div id="app" class="container" style="display:none;">
 
-<button class="red" onclick="logout()">Logout</button>
+<button class="red" onclick="logout()">
+Logout
+</button>
 
 <div class="layout">
 
-<!-- LEFT FILTER -->
-<div class="panel left">
-<h3>Filters</h3>
+<!-- LEFT -->
+<div class="panel">
 
-<input id="search" placeholder="Search..." onkeyup="render()">
+<h3>Search</h3>
 
-<select id="typeFilter" onchange="render()">
-<option value="">All</option>
-<option value="Condo">Condo</option>
-<option value="Landed">Landed</option>
+<input id="search"
+placeholder="Search property"
+onkeyup="render()">
+
+<select id="typeFilter"
+onchange="render()">
+
+<option value="">
+All
+</option>
+
+<option value="Condo">
+Condo
+</option>
+
+<option value="Landed">
+Landed
+</option>
+
 </select>
+
+<hr>
+
+<h3>Add Property</h3>
+
+<input id="pname" placeholder="Name">
+<input id="plocation" placeholder="Location">
+<input id="ptype" placeholder="Type">
+<input id="pprice" placeholder="Price">
+
+<button class="primary"
+onclick="addProperty()">
+Add
+</button>
 
 </div>
 
 <!-- CENTER -->
-<div class="panel center">
+<div>
+
 <h3>Properties</h3>
-<div id="list"></div>
+
+<div id="list"
+class="grid">
+</div>
+
 </div>
 
 <!-- RIGHT -->
-<div class="panel right">
-<h3>Investment Tool</h3>
+<div class="panel">
+
+<h3>🏠 Loan Calculator</h3>
+
+<input id="loanPrice"
+placeholder="Price">
+
+<input id="loanDown"
+placeholder="Down %"
+value="10">
+
+<input id="loanRate"
+placeholder="Rate %"
+value="4.2">
+
+<input id="loanYear"
+placeholder="Years"
+value="35">
+
+<button class="primary"
+onclick="calcLoan()">
+Calculate
+</button>
+
+<div id="loanResult"></div>
+
+<hr>
+
+<h3>Investment</h3>
 
 <div id="detailPanel">
-<p>Select property</p>
+Select property
 </div>
 
 </div>
 
 </div>
+
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
 import {
 getAuth,
 createUserWithEmailAndPassword,
 signInWithEmailAndPassword,
 onAuthStateChanged,
 signOut
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import {
 getFirestore,
 collection,
-getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-/* CONFIG */
-const firebaseConfig = {
-apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
-authDomain: "roadtob-d0c2d.firebaseapp.com",
-projectId: "roadtob-d0c2d"
-};
-
-const appFirebase = initializeApp(firebaseConfig);
-const auth = getAuth(appFirebase);
-const db = getFirestore(appFirebase);
-
-/* DOM */
-const authBox = document.getElementById("authBox");
-const appBox = document.getElementById("app");
-const userStatus = document.getElementById("userStatus");
-const list = document.getElementById("list");
-
-let properties = [];
-
-/* AUTH */
-window.signup = async () => {
-try{
-await createUserWithEmailAndPassword(auth,email.value,password.value);
-msg.innerText = "Signup success";
-}catch(e){
-msg.innerText = e.message;
+getDocs,
+addDoc
 }
+from
+"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
+authDomain:"roadtob-d0c2d.firebaseapp.com",
+projectId:"roadtob-d0c2d"
 };
 
-window.login = async () => {
-try{
-await signInWithEmailAndPassword(auth,email.value,password.value);
-msg.innerText = "Login success";
-}catch(e){
-msg.innerText = e.message;
-}
+const appFirebase=
+initializeApp(firebaseConfig);
+
+const auth=
+getAuth(appFirebase);
+
+const db=
+getFirestore(appFirebase);
+
+let properties=[];
+
+window.signup=async()=>{
+await createUserWithEmailAndPassword(
+auth,
+email.value,
+password.value
+);
 };
 
-window.logout = async () => {
+window.login=async()=>{
+await signInWithEmailAndPassword(
+auth,
+email.value,
+password.value
+);
+};
+
+window.logout=async()=>{
 await signOut(auth);
 };
 
-/* AUTH STATE */
-onAuthStateChanged(auth, async (user)=>{
+onAuthStateChanged(
+auth,
+async(user)=>{
 
 if(!user){
+
 authBox.style.display="block";
-appBox.style.display="none";
+app.style.display="none";
+
 return;
+
 }
 
 authBox.style.display="none";
-appBox.style.display="block";
+app.style.display="block";
 
-userStatus.innerText = user.email;
+userStatus.innerText=
+user.email;
 
 await load();
 
 });
 
-/* LOAD */
 async function load(){
 
-const snap = await getDocs(collection(db,"properties"));
+try{
 
-properties = snap.docs.map(d=>d.data());
+const snap=
+await getDocs(
+collection(
+db,
+"properties"
+)
+);
+
+properties=
+snap.docs.map(
+d=>({
+id:d.id,
+...d.data()
+})
+);
+
+}catch(e){
+
+properties=[
+{
+name:"Connaught One",
+location:"Cheras",
+type:"Condo",
+price:464000
+},
+{
+name:"Aricia Residences",
+location:"Sungai Long",
+type:"Condo",
+price:530000
+}
+];
+
+}
 
 render();
 
 }
 
-/* RENDER */
-function render(){
+window.addProperty=
+async()=>{
 
-let keyword = search?.value?.toLowerCase() || "";
-let type = typeFilter?.value || "";
-
-let filtered = properties.filter(p=>
-p.name.toLowerCase().includes(keyword) &&
-(type === "" || p.type === type)
+await addDoc(
+collection(
+db,
+"properties"
+),
+{
+name:pname.value,
+location:plocation.value,
+type:ptype.value,
+price:Number(
+pprice.value
+)
+}
 );
 
-list.innerHTML = filtered.map((p,i)=>`
-<div class="card" onclick="openDetail(${i})">
-<h3>${p.name}</h3>
-<p>${p.location}</p>
-<p>${p.type}</p>
-<p class="price">RM ${p.price}</p>
-</div>
-`).join("");
+load();
 
-}
-
-/* DETAIL + INVESTMENT */
-window.openDetail = function(i){
-
-let p = properties[i];
-
-let rent = p.price * 0.004;
-let roi = (rent*12/p.price)*100;
-
-let loan = calcLoan(p.price,10,4.2,35);
-
-document.getElementById("detailPanel").innerHTML = `
-
-<h3>${p.name}</h3>
-<p>${p.location}</p>
-
-<hr>
-
-<h4>💰 Investment</h4>
-
-<p>Rent: RM ${rent.toFixed(0)}</p>
-<p>ROI: ${roi.toFixed(2)}%</p>
-<p>Loan: RM ${loan.monthly.toFixed(0)}</p>
-<p>Cashflow: RM ${(rent-loan.monthly).toFixed(0)}</p>
-
-`;
 };
 
-/* LOAN */
-function calcLoan(price,down,rate,year){
+window.render=()=>{
 
-let loan = price*(1-down/100);
-let r = rate/100/12;
-let n = year*12;
+let keyword=
+search.value
+.toLowerCase();
 
-let monthly = (loan*r)/(1-Math.pow(1+r,-n));
+let type=
+typeFilter.value;
 
-return {monthly};
-}
+let filtered=
+properties.filter(
+p=>
+
+p.name
+.toLowerCase()
+.includes(keyword)
+
+&&
+
+(
+type==""
+
+||
+
+p.type==type
+)
+
+);
+
+list.innerHTML=
+filtered.map(
+(p,index)=>`
+
+<div class="card">
+
+<h3>${p.name}</h3>
+
+<p>
+${p.location}
+</p>
+
+<p>
+${p.type}
+</p>
+
+<p class="price">
+RM ${p.price}
+</p>
+
+<button class="primary"
+onclick="openDetail(${index})">
+Analyse
+</button>
+
+</div>
+
+`
+).join("");
+
+};
+
+window.openDetail=
+(i)=>{
+
+let p=
+properties[i];
+
+let rent=
+p.price*0.004;
+
+let roi=
+(
+rent*12
+/
+p.price
+)*100;
+
+detailPanel.innerHTML=`
+
+<p>
+<b>
+${p.name}
+</b>
+</p>
+
+<p>
+Rent:
+RM
+${rent.toFixed(0)}
+</p>
+
+<p>
+ROI:
+${roi.toFixed(2)}%
+</p>
+
+`;
+
+};
+
+window.calcLoan=()=>{
+
+let price=
+Number(
+loanPrice.value
+);
+
+let down=
+Number(
+loanDown.value
+);
+
+let rate=
+Number(
+loanRate.value
+);
+
+let year=
+Number(
+loanYear.value
+);
+
+let loan=
+price*
+(
+1-down/100
+);
+
+let r=
+rate/100/12;
+
+let n=
+year*12;
+
+let monthly=
+(
+loan*r
+)
+/
+(
+1-
+Math.pow(
+1+r,
+-n
+)
+);
+
+loanResult.innerHTML=`
+
+<p>
+Loan:
+RM
+${loan.toFixed(0)}
+</p>
+
+<p>
+Monthly:
+RM
+${monthly.toFixed(0)}
+</p>
+
+`;
+
+};
 
 </script>
 
