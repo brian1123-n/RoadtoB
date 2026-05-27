@@ -26,7 +26,7 @@ padding:20px;
 
 .layout{
 display:grid;
-grid-template-columns:250px 1fr 320px;
+grid-template-columns:260px 1fr 320px;
 gap:20px;
 }
 
@@ -49,6 +49,7 @@ padding:10px;
 margin-top:8px;
 border:1px solid #ddd;
 border-radius:8px;
+box-sizing:border-box;
 }
 
 button{
@@ -58,6 +59,7 @@ margin-top:10px;
 border:none;
 border-radius:8px;
 cursor:pointer;
+font-weight:bold;
 }
 
 .primary{
@@ -84,26 +86,41 @@ font-weight:bold;
 <div id="userStatus">Loading...</div>
 </div>
 
-<div id="authBox" class="panel" style="max-width:400px;margin:30px auto;">
+<!-- LOGIN -->
+<div id="authBox"
+class="panel"
+style="max-width:420px;margin:30px auto;">
+
 <h3>Login</h3>
 
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
+<input id="email"
+placeholder="Email">
 
-<button class="primary" onclick="signup()">
+<input id="password"
+type="password"
+placeholder="Password">
+
+<button class="primary"
+onclick="signup()">
 Sign Up
 </button>
 
-<button class="primary" onclick="login()">
+<button class="primary"
+onclick="login()">
 Login
 </button>
 
 <div id="msg"></div>
+
 </div>
 
-<div id="app" class="container" style="display:none;">
+<!-- APP -->
+<div id="app"
+class="container"
+style="display:none;">
 
-<button class="red" onclick="logout()">
+<button class="red"
+onclick="logout()">
 Logout
 </button>
 
@@ -115,7 +132,7 @@ Logout
 <h3>Search</h3>
 
 <input id="search"
-placeholder="Search property"
+placeholder="Search"
 onkeyup="render()">
 
 <select id="typeFilter"
@@ -139,14 +156,21 @@ Landed
 
 <h3>Add Property</h3>
 
-<input id="pname" placeholder="Name">
-<input id="plocation" placeholder="Location">
-<input id="ptype" placeholder="Type">
-<input id="pprice" placeholder="Price">
+<input id="pname"
+placeholder="Name">
+
+<input id="plocation"
+placeholder="Location">
+
+<input id="ptype"
+placeholder="Type">
+
+<input id="pprice"
+placeholder="Price">
 
 <button class="primary"
 onclick="addProperty()">
-Add
+Add Property
 </button>
 
 </div>
@@ -168,19 +192,19 @@ class="grid">
 <h3>🏠 Loan Calculator</h3>
 
 <input id="loanPrice"
-placeholder="Price">
+placeholder="Property Price">
 
 <input id="loanDown"
-placeholder="Down %"
-value="10">
+value="10"
+placeholder="Down %">
 
 <input id="loanRate"
-placeholder="Rate %"
-value="4.2">
+value="4.2"
+placeholder="Rate %">
 
 <input id="loanYear"
-placeholder="Years"
-value="35">
+value="35"
+placeholder="Years">
 
 <button class="primary"
 onclick="calcLoan()">
@@ -230,42 +254,95 @@ addDoc
 from
 "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* FIREBASE */
+
 const firebaseConfig={
+
 apiKey:"AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
-authDomain:"roadtob-d0c2d.firebaseapp.com",
-projectId:"roadtob-d0c2d"
+
+authDomain:
+"roadtob-d0c2d.firebaseapp.com",
+
+projectId:
+"roadtob-d0c2d"
+
 };
 
 const appFirebase=
-initializeApp(firebaseConfig);
+initializeApp(
+firebaseConfig
+);
 
 const auth=
-getAuth(appFirebase);
+getAuth(
+appFirebase
+);
 
 const db=
-getFirestore(appFirebase);
+getFirestore(
+appFirebase
+);
 
 let properties=[];
 
-window.signup=async()=>{
+/* AUTH */
+
+window.signup=
+async()=>{
+
+try{
+
 await createUserWithEmailAndPassword(
 auth,
 email.value,
 password.value
 );
+
+msg.innerText=
+"Signup success";
+
+}catch(e){
+
+msg.innerText=
+e.message;
+
+}
+
 };
 
-window.login=async()=>{
+window.login=
+async()=>{
+
+try{
+
 await signInWithEmailAndPassword(
 auth,
 email.value,
 password.value
 );
+
+msg.innerText=
+"Login success";
+
+}catch(e){
+
+msg.innerText=
+e.message;
+
+}
+
 };
 
-window.logout=async()=>{
-await signOut(auth);
+window.logout=
+async()=>{
+
+await signOut(
+auth
+);
+
 };
+
+/* LOGIN FLOW */
 
 onAuthStateChanged(
 auth,
@@ -273,15 +350,21 @@ async(user)=>{
 
 if(!user){
 
-authBox.style.display="block";
-app.style.display="none";
+authBox.style.display=
+"block";
+
+app.style.display=
+"none";
 
 return;
 
 }
 
-authBox.style.display="none";
-app.style.display="block";
+authBox.style.display=
+"none";
+
+app.style.display=
+"block";
 
 userStatus.innerText=
 user.email;
@@ -289,6 +372,8 @@ user.email;
 await load();
 
 });
+
+/* LOAD DATA */
 
 async function load(){
 
@@ -310,7 +395,9 @@ id:d.id,
 })
 );
 
-}catch(e){
+if(
+properties.length===0
+){
 
 properties=[
 {
@@ -329,12 +416,37 @@ price:530000
 
 }
 
+}catch(e){
+
+console.log(e);
+
+}
+
 render();
 
 }
 
+/* ADD PROPERTY */
+
 window.addProperty=
 async()=>{
+
+try{
+
+if(
+!pname.value ||
+!plocation.value ||
+!ptype.value ||
+!pprice.value
+){
+
+alert(
+"Fill all fields"
+);
+
+return;
+
+}
 
 await addDoc(
 collection(
@@ -342,20 +454,50 @@ db,
 "properties"
 ),
 {
-name:pname.value,
-location:plocation.value,
-type:ptype.value,
-price:Number(
+name:
+pname.value,
+
+location:
+plocation.value,
+
+type:
+ptype.value,
+
+price:
+Number(
 pprice.value
-)
+),
+
+createdAt:
+Date.now()
 }
 );
 
-load();
+alert(
+"Added successfully"
+);
+
+pname.value="";
+plocation.value="";
+ptype.value="";
+pprice.value="";
+
+await load();
+
+}catch(e){
+
+alert(
+e.message
+);
+
+}
 
 };
 
-window.render=()=>{
+/* RENDER */
+
+window.render=
+()=>{
 
 let keyword=
 search.value
@@ -370,7 +512,9 @@ p=>
 
 p.name
 .toLowerCase()
-.includes(keyword)
+.includes(
+keyword
+)
 
 &&
 
@@ -379,7 +523,8 @@ type==""
 
 ||
 
-p.type==type
+p.type==
+type
 )
 
 );
@@ -390,7 +535,9 @@ filtered.map(
 
 <div class="card">
 
-<h3>${p.name}</h3>
+<h3>
+${p.name}
+</h3>
 
 <p>
 ${p.location}
@@ -404,8 +551,11 @@ ${p.type}
 RM ${p.price}
 </p>
 
-<button class="primary"
-onclick="openDetail(${index})">
+<button
+class="primary"
+onclick="
+openDetail(${index})
+">
 Analyse
 </button>
 
@@ -415,6 +565,8 @@ Analyse
 ).join("");
 
 };
+
+/* INVESTMENT */
 
 window.openDetail=
 (i)=>{
@@ -455,7 +607,10 @@ ${roi.toFixed(2)}%
 
 };
 
-window.calcLoan=()=>{
+/* LOAN */
+
+window.calcLoan=
+()=>{
 
 let price=
 Number(
