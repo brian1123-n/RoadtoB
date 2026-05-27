@@ -3,74 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - Clean SaaS</title>
+<title>PropertyIntel MY - Level 5 SaaS</title>
 
 <style>
 body{
     margin:0;
-    font-family:Arial;
-    background:#f4f7fb;
+    font-family:"Segoe UI", Arial;
+    background:#eef2f7;
 }
 
-.header{
-    background:linear-gradient(135deg,#0f172a,#1e3a8a);
+/* NAV */
+.nav{
+    background:#0f172a;
     color:white;
-    padding:20px;
+    padding:15px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 
+.badge{
+    background:#22c55e;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:12px;
+}
+
+/* LOGIN BOX */
 .box{
     background:white;
-    margin:20px;
-    padding:15px;
-    border-radius:10px;
-    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    margin:20px auto;
+    padding:20px;
+    border-radius:12px;
+    max-width:420px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
 
 input{
-    padding:10px;
-    margin:5px;
-    width:200px;
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:1px solid #ddd;
+    border-radius:8px;
 }
 
 button{
-    padding:10px 15px;
-    background:#1e3a8a;
-    color:white;
+    width:100%;
+    padding:12px;
+    margin-top:8px;
     border:none;
-    border-radius:6px;
+    border-radius:8px;
     cursor:pointer;
+    font-weight:bold;
 }
 
+.btn1{ background:#1d4ed8; color:white; }
+.btn2{ background:#0f172a; color:white; }
+.btn3{ background:#22c55e; color:white; }
+
+/* SEARCH */
+.search{
+    text-align:center;
+    margin:15px;
+}
+
+.search input{
+    max-width:400px;
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:15px;
+    padding:20px;
+}
+
+/* CARD */
 .card{
     background:white;
-    margin:10px 20px;
     padding:15px;
-    border-radius:10px;
-    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    border-radius:12px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.06);
+    transition:0.2s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+}
+
+.price{
+    font-size:18px;
+    font-weight:bold;
+    color:#16a34a;
 }
 </style>
-
 </head>
 
 <body>
 
-<div class="header">
-<h2>PropertyIntel MY (Stable SaaS Build)</h2>
+<div class="nav">
+    <div>🏠 PropertyIntel MY</div>
+    <div id="planTag" class="badge">FREE</div>
 </div>
 
 <div class="box">
-<h3>Login / Register</h3>
+    <h3>Login / Register</h3>
 
-<input id="email" placeholder="Email">
-<input id="password" placeholder="Password">
+    <input id="email" placeholder="Email">
+    <input id="password" placeholder="Password">
 
-<button onclick="signup()">Sign Up</button>
-<button onclick="login()">Login</button>
+    <button class="btn1" onclick="signup()">Sign Up</button>
+    <button class="btn2" onclick="login()">Login</button>
 
-<p id="status">Not logged in</p>
+    <button class="btn3" onclick="loadProperties()">
+        Refresh Properties
+    </button>
+
+    <div id="status">Not logged in</div>
 </div>
 
-<div id="list"></div>
+<div class="search">
+    <input id="searchBox" placeholder="Search property..." onkeyup="filter()">
+</div>
+
+<div class="grid" id="list"></div>
 
 <!-- FIREBASE -->
 <script type="module">
@@ -87,116 +144,123 @@ import {
   getFirestore,
   doc,
   setDoc,
-  getDoc
+  getDoc,
+  collection,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* YOUR FIREBASE CONFIG */
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
   authDomain: "roadtob-d0c2d.firebaseapp.com",
   projectId: "roadtob-d0c2d",
   storageBucket: "roadtob-d0c2d.firebasestorage.app",
   messagingSenderId: "795422777154",
-  appId: "1:795422777154:web:a4a23653d849dd2d1572db",
-  measurementId: "G-FKQ7X5876L"
+  appId: "1:795422777154:web:a4a23653d849dd2d1572db"
 };
 
-/* INIT */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-console.log("Firebase Ready");
+let currentPlan = "free";
+let allProperties = [];
 
 /* SIGNUP */
-window.signup = async function () {
-  try {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+window.signup = async function(){
+    const email = emailBox();
+    const pass = passBox();
 
-    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    const user = await createUserWithEmailAndPassword(auth, email, pass);
 
-    await setDoc(doc(db, "users", userCred.user.uid), {
-      email: email,
-      plan: "free"
+    await setDoc(doc(db,"users",user.user.uid),{
+        email,
+        plan:"free"
     });
 
-    document.getElementById("status").innerText =
-      "Signed up as " + email + " (free)";
-
-    loadProperties("free");
-
     alert("Signup success");
-
-  } catch (err) {
-    alert(err.message);
-    console.log(err);
-  }
 };
 
 /* LOGIN */
-window.login = async function () {
-  try {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+window.login = async function(){
+    const email = emailBox();
+    const pass = passBox();
 
-    await signInWithEmailAndPassword(auth, email, password);
-
-    document.getElementById("status").innerText =
-      "Logged in as " + email;
+    await signInWithEmailAndPassword(auth,email,pass);
 
     alert("Login success");
-
-  } catch (err) {
-    alert(err.message);
-    console.log(err);
-  }
 };
 
-/* AUTH LISTENER */
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
+/* AUTH */
+onAuthStateChanged(auth, async (user)=>{
+    if(!user) return;
 
-    let snap = await getDoc(doc(db, "users", user.uid));
+    let snap = await getDoc(doc(db,"users",user.uid));
 
-    let plan = snap.exists() ? snap.data().plan : "free";
+    currentPlan = snap.exists() ? snap.data().plan : "free";
 
     document.getElementById("status").innerText =
-      "Logged in: " + user.email + " (" + plan + ")";
+    user.email + " (" + currentPlan + ")";
 
-    loadProperties(plan);
+    document.getElementById("planTag").innerText =
+    currentPlan.toUpperCase();
 
-  } else {
-    document.getElementById("list").innerHTML = "";
-  }
+    loadProperties();
 });
 
-/* PROPERTIES */
-function loadProperties(plan){
+/* LOAD FIRESTORE PROPERTIES */
+window.loadProperties = async function(){
 
-  let data = [
-    {name:"Residensi Alpha", price:520000},
-    {name:"SkyVista Residence", price:780000},
-    {name:"Metro Heights", price:430000}
-  ];
+    const snap = await getDocs(collection(db,"properties"));
 
-  let html = "";
+    allProperties = [];
 
-  data.forEach(p=>{
-    html += `
-      <div class="card">
-        <h3>${p.name}</h3>
-        <p>RM ${p.price}</p>
+    snap.forEach(d=>{
+        allProperties.push(d.data());
+    });
 
-        ${plan === "free"
-          ? "<p style='color:red'>Free Plan - limited view</p>"
-          : "<p style='color:green'>PRO access unlocked</p>"
-        }
-      </div>
-    `;
-  });
+    render(allProperties);
+};
 
-  document.getElementById("list").innerHTML = html;
+/* RENDER */
+function render(data){
+
+    let html = "";
+
+    data.forEach(p=>{
+        html += `
+        <div class="card">
+            <h3>${p.name}</h3>
+            <p>📍 ${p.location}</p>
+            <p>🏢 ${p.type}</p>
+            <p>📐 ${p.size} sqft</p>
+            <div class="price">RM ${p.price}</div>
+        </div>
+        `;
+    });
+
+    document.getElementById("list").innerHTML = html;
+}
+
+/* SEARCH FILTER */
+window.filter = function(){
+
+    let keyword = document.getElementById("searchBox").value.toLowerCase();
+
+    let filtered = allProperties.filter(p =>
+        p.name.toLowerCase().includes(keyword) ||
+        p.location.toLowerCase().includes(keyword)
+    );
+
+    render(filtered);
+};
+
+/* HELPERS */
+function emailBox(){
+    return document.getElementById("email").value;
+}
+function passBox(){
+    return document.getElementById("password").value;
 }
 
 </script>
