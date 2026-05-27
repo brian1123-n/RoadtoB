@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - Working SaaS</title>
+<title>PropertyIntel MY - Clean SaaS</title>
 
 <style>
 body{
@@ -55,7 +55,7 @@ button{
 <body>
 
 <div class="header">
-<h2>PropertyIntel MY (Level 4 Working SaaS)</h2>
+<h2>PropertyIntel MY (Stable SaaS Build)</h2>
 </div>
 
 <div class="box">
@@ -72,7 +72,7 @@ button{
 
 <div id="list"></div>
 
-<!-- FIREBASE (MODULAR - MATCH YOUR CONFIG) -->
+<!-- FIREBASE -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -106,9 +106,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-console.log("Firebase loaded");
+console.log("Firebase Ready");
 
-/* SIGN UP */
+/* SIGNUP */
 window.signup = async function () {
   try {
     const email = document.getElementById("email").value;
@@ -121,9 +121,16 @@ window.signup = async function () {
       plan: "free"
     });
 
+    document.getElementById("status").innerText =
+      "Signed up as " + email + " (free)";
+
+    loadProperties("free");
+
     alert("Signup success");
+
   } catch (err) {
     alert(err.message);
+    console.log(err);
   }
 };
 
@@ -135,17 +142,22 @@ window.login = async function () {
 
     await signInWithEmailAndPassword(auth, email, password);
 
+    document.getElementById("status").innerText =
+      "Logged in as " + email;
+
     alert("Login success");
+
   } catch (err) {
     alert(err.message);
+    console.log(err);
   }
 };
 
-/* USER STATE */
+/* AUTH LISTENER */
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const ref = doc(db, "users", user.uid);
-    const snap = await getDoc(ref);
+
+    let snap = await getDoc(doc(db, "users", user.uid));
 
     let plan = snap.exists() ? snap.data().plan : "free";
 
@@ -153,10 +165,13 @@ onAuthStateChanged(auth, async (user) => {
       "Logged in: " + user.email + " (" + plan + ")";
 
     loadProperties(plan);
+
+  } else {
+    document.getElementById("list").innerHTML = "";
   }
 });
 
-/* SAMPLE DATA */
+/* PROPERTIES */
 function loadProperties(plan){
 
   let data = [
@@ -174,8 +189,8 @@ function loadProperties(plan){
         <p>RM ${p.price}</p>
 
         ${plan === "free"
-          ? "<p style='color:red'>Free plan - limited view</p>"
-          : "<p style='color:green'>PRO unlocked</p>"
+          ? "<p style='color:red'>Free Plan - limited view</p>"
+          : "<p style='color:green'>PRO access unlocked</p>"
         }
       </div>
     `;
