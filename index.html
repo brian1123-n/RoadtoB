@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - Stable Build</title>
+<title>PropertyIntel MY - Stable</title>
 
 <style>
 body{
@@ -20,14 +20,12 @@ body{
     justify-content:space-between;
 }
 
-.container{padding:15px;}
-
 .box{
     background:white;
     padding:15px;
-    border-radius:12px;
-    max-width:420px;
     margin:20px auto;
+    max-width:420px;
+    border-radius:12px;
     box-shadow:0 8px 20px rgba(0,0,0,0.08);
 }
 
@@ -52,7 +50,8 @@ button{
 .primary{background:#2563eb;color:white;}
 .dark{background:#0f172a;color:white;}
 .red{background:#ef4444;color:white;}
-.green{background:#22c55e;color:white;}
+
+.container{padding:15px;}
 
 .grid{
     display:grid;
@@ -71,8 +70,8 @@ button{
 
 .compareBox{
     background:white;
-    margin-top:15px;
     padding:15px;
+    margin-top:15px;
     border-radius:12px;
 }
 
@@ -93,7 +92,7 @@ td,th{
 
 <div class="header">
 <div>🏠 PropertyIntel MY</div>
-<div id="userStatus">Not logged in</div>
+<div id="userStatus">Loading...</div>
 </div>
 
 <!-- LOGIN -->
@@ -109,7 +108,7 @@ td,th{
 <div id="msg"></div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- APP -->
 <div id="app" class="container" style="display:none;">
 
 <button class="red" onclick="logout()">Logout</button>
@@ -117,7 +116,7 @@ td,th{
 <h3>Properties</h3>
 <div class="grid" id="list"></div>
 
-<button class="green" onclick="showCompare()">
+<button class="primary" onclick="showCompare()">
 Compare (<span id="compareCount">0</span>)
 </button>
 
@@ -150,58 +149,68 @@ authDomain: "roadtob-d0c2d.firebaseapp.com",
 projectId: "roadtob-d0c2d"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const appFirebase = initializeApp(firebaseConfig);
+const auth = getAuth(appFirebase);
+const db = getFirestore(appFirebase);
 
-/* STATE */
+/* DOM FIX (IMPORTANT) */
+const authBox = document.getElementById("authBox");
+const appBox = document.getElementById("app");
+const userStatus = document.getElementById("userStatus");
+const list = document.getElementById("list");
+
 let properties = [];
 let compare = [];
 
 /* AUTH */
-window.signup = async ()=>{
+window.signup = async () => {
 try{
-    await createUserWithEmailAndPassword(auth,email.value,password.value);
-    msg.innerText = "Signup success";
+await createUserWithEmailAndPassword(auth,email.value,password.value);
+msg.innerText = "Signup success";
 }catch(e){
-    msg.innerText = e.message;
+msg.innerText = e.message;
 }
 };
 
-window.login = async ()=>{
+window.login = async () => {
 try{
-    await signInWithEmailAndPassword(auth,email.value,password.value);
-    msg.innerText = "Login success";
+await signInWithEmailAndPassword(auth,email.value,password.value);
+msg.innerText = "Login success";
 }catch(e){
-    msg.innerText = e.message;
+msg.innerText = e.message;
 }
 };
 
-window.logout = async ()=>{
+window.logout = async () => {
 await signOut(auth);
 compare = [];
 };
 
-/* AUTH STATE */
-onAuthStateChanged(auth,(user)=>{
+/* AUTH STATE (FIXED STABLE FLOW) */
+onAuthStateChanged(auth, async (user) => {
+
+console.log("AUTH:", user);
 
 if(!user){
-    authBox.style.display="block";
-    app.style.display="none";
-    userStatus.innerText="Not logged in";
-    return;
+authBox.style.display = "block";
+appBox.style.display = "none";
+userStatus.innerText = "Not logged in";
+return;
 }
 
-authBox.style.display="none";
-app.style.display="block";
-userStatus.innerText=user.email;
+/* LOCK UI FIRST (prevents flicker) */
+authBox.style.display = "none";
+appBox.style.display = "block";
 
-load();
+userStatus.innerText = user.email;
+
+/* LOAD DATA AFTER LOGIN */
+await load();
+
 });
 
 /* LOAD FIRESTORE */
 async function load(){
-
 try{
 
 const snap = await getDocs(collection(db,"properties"));
@@ -209,31 +218,30 @@ const snap = await getDocs(collection(db,"properties"));
 properties = [];
 
 snap.forEach(doc=>{
-    properties.push(doc.data());
+properties.push(doc.data());
 });
 
-console.log("Loaded:",properties.length);
+console.log("Loaded:", properties.length);
 
 render();
 
-}catch(e){
-console.error("Firestore error:",e);
-list.innerHTML = "<p>Error loading data</p>";
+}catch(err){
+console.error("Firestore error:",err);
+list.innerHTML = "<p>Failed to load properties</p>";
 }
-
 }
 
 /* RENDER */
 function render(){
 
-if(properties.length===0){
+if(properties.length === 0){
 list.innerHTML = "<p>No properties found in Firestore.</p>";
 return;
 }
 
 list.innerHTML = properties.map((p,i)=>`
 <div class="card">
-<h3>${p.name || "No name"}</h3>
+<h3>${p.name || "-"}</h3>
 <p>${p.location || "-"}</p>
 <p>${p.type || "-"}</p>
 <p class="price">RM ${p.price || 0}</p>
@@ -257,26 +265,26 @@ alert("Invalid property");
 return;
 }
 
-if(compare.length>=3){
+if(compare.length >= 3){
 alert("Max 3 only");
 return;
 }
 
 compare.push(p);
-compareCount.innerText = compare.length;
+document.getElementById("compareCount").innerText = compare.length;
 
 };
 
 /* SHOW COMPARE */
 window.showCompare = function(){
 
-if(compare.length<2){
+if(compare.length < 2){
 alert("Select at least 2 properties");
 return;
 }
 
-compareBox.innerHTML=`
-<h3>Comparison Table</h3>
+document.getElementById("compareBox").innerHTML = `
+<h3>Comparison</h3>
 
 <table>
 <tr>
@@ -301,7 +309,6 @@ ${compare.map(p=>`<td>${p.type}</td>`).join("")}
 
 </table>
 `;
-
 };
 
 </script>
