@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - Level 5 SaaS</title>
+<title>PropertyIntel MY - Level 6</title>
 
 <style>
 body{
     margin:0;
     font-family:"Segoe UI", Arial;
-    background:#eef2f7;
+    background:#f1f5f9;
 }
 
 /* NAV */
 .nav{
-    background:#0f172a;
+    background:linear-gradient(135deg,#0f172a,#1e3a8a);
     color:white;
     padding:15px 20px;
     display:flex;
@@ -32,8 +32,8 @@ body{
 /* LOGIN BOX */
 .box{
     background:white;
-    margin:20px auto;
-    padding:20px;
+    margin:15px auto;
+    padding:15px;
     border-radius:12px;
     max-width:420px;
     box-shadow:0 10px 25px rgba(0,0,0,0.08);
@@ -41,34 +41,36 @@ body{
 
 input{
     width:100%;
-    padding:12px;
-    margin:8px 0;
-    border:1px solid #ddd;
+    padding:10px;
+    margin:6px 0;
     border-radius:8px;
+    border:1px solid #ddd;
 }
 
 button{
     width:100%;
-    padding:12px;
+    padding:10px;
     margin-top:8px;
     border:none;
     border-radius:8px;
-    cursor:pointer;
     font-weight:bold;
+    cursor:pointer;
 }
 
-.btn1{ background:#1d4ed8; color:white; }
-.btn2{ background:#0f172a; color:white; }
-.btn3{ background:#22c55e; color:white; }
+.btn1{background:#1d4ed8;color:white;}
+.btn2{background:#0f172a;color:white;}
+.btn3{background:#22c55e;color:white;}
 
-/* SEARCH */
-.search{
-    text-align:center;
-    margin:15px;
+/* FILTER */
+.filter{
+    display:flex;
+    gap:10px;
+    padding:10px 15px;
+    flex-wrap:wrap;
 }
 
-.search input{
-    max-width:400px;
+.filter input{
+    flex:1;
 }
 
 /* GRID */
@@ -76,26 +78,56 @@ button{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
     gap:15px;
-    padding:20px;
+    padding:15px;
 }
 
 /* CARD */
 .card{
     background:white;
     padding:15px;
-    border-radius:12px;
+    border-radius:14px;
     box-shadow:0 8px 20px rgba(0,0,0,0.06);
-    transition:0.2s;
-}
-
-.card:hover{
-    transform:translateY(-5px);
+    position:relative;
 }
 
 .price{
     font-size:18px;
     font-weight:bold;
     color:#16a34a;
+}
+
+.badgeHot{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:#f59e0b;
+    color:white;
+    padding:4px 8px;
+    font-size:10px;
+    border-radius:20px;
+}
+
+/* COMPARE */
+.compareBar{
+    text-align:center;
+    padding:10px;
+}
+
+.compareBox{
+    padding:15px;
+    overflow:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+td,th{
+    border:1px solid #ddd;
+    padding:8px;
+    text-align:center;
 }
 </style>
 </head>
@@ -107,6 +139,7 @@ button{
     <div id="planTag" class="badge">FREE</div>
 </div>
 
+<!-- LOGIN -->
 <div class="box">
     <h3>Login / Register</h3>
 
@@ -116,152 +149,176 @@ button{
     <button class="btn1" onclick="signup()">Sign Up</button>
     <button class="btn2" onclick="login()">Login</button>
 
-    <button class="btn3" onclick="loadProperties()">
-        Refresh Properties
-    </button>
-
     <div id="status">Not logged in</div>
 </div>
 
-<div class="search">
-    <input id="searchBox" placeholder="Search property..." onkeyup="filter()">
+<!-- FILTER -->
+<div class="filter">
+    <input id="search" placeholder="Search property..." onkeyup="render()">
 </div>
 
+<!-- COMPARE BUTTON -->
+<div class="compareBar">
+    <button class="btn3" onclick="showCompare()">
+        Compare Properties 📊 (<span id="compareCount">0</span>)
+    </button>
+</div>
+
+<!-- GRID -->
 <div class="grid" id="list"></div>
+
+<!-- COMPARE BOX -->
+<div class="compareBox" id="compareBox"></div>
 
 <!-- FIREBASE -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  collection,
-  getDocs
+getFirestore,
+collection,
+getDocs,
+doc,
+setDoc,
+getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-/* FIREBASE CONFIG */
+/* CONFIG */
 const firebaseConfig = {
-  apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
-  authDomain: "roadtob-d0c2d.firebaseapp.com",
-  projectId: "roadtob-d0c2d",
-  storageBucket: "roadtob-d0c2d.firebasestorage.app",
-  messagingSenderId: "795422777154",
-  appId: "1:795422777154:web:a4a23653d849dd2d1572db"
+apiKey: "AIzaSyBOxWZEatKcMxCgt23vobv3a1hJV9Qw4y0",
+authDomain: "roadtob-d0c2d.firebaseapp.com",
+projectId: "roadtob-d0c2d"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let currentPlan = "free";
-let allProperties = [];
+let properties = [];
+let compareList = [];
 
-/* SIGNUP */
+/* AUTH */
 window.signup = async function(){
-    const email = emailBox();
-    const pass = passBox();
+    const u = await createUserWithEmailAndPassword(auth,email.value,password.value);
 
-    const user = await createUserWithEmailAndPassword(auth, email, pass);
-
-    await setDoc(doc(db,"users",user.user.uid),{
-        email,
+    await setDoc(doc(db,"users",u.user.uid),{
         plan:"free"
     });
 
     alert("Signup success");
 };
 
-/* LOGIN */
 window.login = async function(){
-    const email = emailBox();
-    const pass = passBox();
-
-    await signInWithEmailAndPassword(auth,email,pass);
-
+    await signInWithEmailAndPassword(auth,email.value,password.value);
     alert("Login success");
 };
 
-/* AUTH */
+/* AUTH STATE */
 onAuthStateChanged(auth, async (user)=>{
     if(!user) return;
 
-    let snap = await getDoc(doc(db,"users",user.uid));
+    const snap = await getDoc(doc(db,"users",user.uid));
 
-    currentPlan = snap.exists() ? snap.data().plan : "free";
+    status.innerText = "Logged in: " + user.email;
+    planTag.innerText = (snap.data()?.plan || "free").toUpperCase();
 
-    document.getElementById("status").innerText =
-    user.email + " (" + currentPlan + ")";
-
-    document.getElementById("planTag").innerText =
-    currentPlan.toUpperCase();
-
-    loadProperties();
+    load();
 });
 
-/* LOAD FIRESTORE PROPERTIES */
-window.loadProperties = async function(){
-
+/* LOAD DATA */
+async function load(){
     const snap = await getDocs(collection(db,"properties"));
-
-    allProperties = [];
-
-    snap.forEach(d=>{
-        allProperties.push(d.data());
-    });
-
-    render(allProperties);
-};
+    properties = snap.docs.map(d=>d.data());
+    render();
+}
 
 /* RENDER */
-function render(data){
+window.render = function(){
 
-    let html = "";
+let keyword = search.value.toLowerCase();
 
-    data.forEach(p=>{
-        html += `
-        <div class="card">
-            <h3>${p.name}</h3>
-            <p>📍 ${p.location}</p>
-            <p>🏢 ${p.type}</p>
-            <p>📐 ${p.size} sqft</p>
-            <div class="price">RM ${p.price}</div>
-        </div>
-        `;
-    });
+let filtered = properties.filter(p=>
+    p.name.toLowerCase().includes(keyword) ||
+    p.location.toLowerCase().includes(keyword)
+);
 
-    document.getElementById("list").innerHTML = html;
-}
+list.innerHTML = filtered.map(p=>`
 
-/* SEARCH FILTER */
-window.filter = function(){
+<div class="card">
+<div class="badgeHot">HOT</div>
 
-    let keyword = document.getElementById("searchBox").value.toLowerCase();
+<h3>${p.name}</h3>
+<p>${p.location}</p>
+<p>${p.type}</p>
+<p class="price">RM ${p.price}</p>
 
-    let filtered = allProperties.filter(p =>
-        p.name.toLowerCase().includes(keyword) ||
-        p.location.toLowerCase().includes(keyword)
-    );
+<button onclick='addCompare(${JSON.stringify(p)})'
+style="margin-top:10px;background:#1d4ed8;color:white;border:none;padding:8px;border-radius:6px;width:100%;">
+Add to Compare
+</button>
 
-    render(filtered);
+</div>
+
+`).join("");
+
 };
 
-/* HELPERS */
-function emailBox(){
-    return document.getElementById("email").value;
+/* ADD COMPARE */
+window.addCompare = function(p){
+
+if(compareList.length >= 3){
+    alert("Max 3 only");
+    return;
 }
-function passBox(){
-    return document.getElementById("password").value;
+
+compareList.push(p);
+compareCount.innerText = compareList.length;
+alert("Added");
+};
+
+/* SHOW COMPARE */
+window.showCompare = function(){
+
+if(compareList.length < 2){
+    alert("Need at least 2 properties");
+    return;
 }
+
+compareBox.innerHTML = `
+<h2>Comparison Table</h2>
+
+<table>
+<tr>
+<th>Field</th>
+${compareList.map(p=>`<th>${p.name}</th>`).join("")}
+</tr>
+
+<tr>
+<td>Price</td>
+${compareList.map(p=>`<td>RM ${p.price}</td>`).join("")}
+</tr>
+
+<tr>
+<td>Location</td>
+${compareList.map(p=>`<td>${p.location}</td>`).join("")}
+</tr>
+
+<tr>
+<td>Type</td>
+${compareList.map(p=>`<td>${p.type}</td>`).join("")}
+</tr>
+
+</table>
+`;
+
+};
 
 </script>
 
