@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropertyIntel MY - SaaS Platform</title>
+<title>PropertyIntel MY - Working SaaS</title>
 
 <style>
 body{
@@ -18,12 +18,12 @@ body{
     padding:20px;
 }
 
-.auth{
+.box{
     background:white;
     margin:20px;
     padding:15px;
     border-radius:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
 }
 
 input{
@@ -41,14 +41,10 @@ button{
     cursor:pointer;
 }
 
-.container{
-    padding:20px;
-}
-
 .card{
     background:white;
+    margin:10px 20px;
     padding:15px;
-    margin:10px;
     border-radius:10px;
     box-shadow:0 3px 10px rgba(0,0,0,0.08);
 }
@@ -59,10 +55,10 @@ button{
 <body>
 
 <div class="header">
-<h2>PropertyIntel MY (Firebase SaaS Working)</h2>
+<h2>PropertyIntel MY (Level 4 Working SaaS)</h2>
 </div>
 
-<div class="auth">
+<div class="box">
 <h3>Login / Register</h3>
 
 <input id="email" placeholder="Email">
@@ -74,24 +70,24 @@ button{
 <p id="status">Not logged in</p>
 </div>
 
-<div class="container" id="list"></div>
+<div id="list"></div>
 
-<!-- FIREBASE (MODERN SDK) -->
+<!-- FIREBASE (MODULAR - MATCH YOUR CONFIG) -->
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { 
-    getAuth, 
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    onAuthStateChanged
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* YOUR FIREBASE CONFIG */
@@ -101,7 +97,8 @@ const firebaseConfig = {
   projectId: "roadtob-d0c2d",
   storageBucket: "roadtob-d0c2d.firebasestorage.app",
   messagingSenderId: "795422777154",
-  appId: "1:795422777154:web:905f3a443b5bf1df1572db"
+  appId: "1:795422777154:web:a4a23653d849dd2d1572db",
+  measurementId: "G-FKQ7X5876L"
 };
 
 /* INIT */
@@ -109,74 +106,82 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* AUTH FUNCTIONS */
-window.signup = async function(){
-    let email = document.getElementById("email").value;
-    let pass = document.getElementById("password").value;
+console.log("Firebase loaded");
 
-    try{
-        const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+/* SIGN UP */
+window.signup = async function () {
+  try {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-        await setDoc(doc(db, "users", userCred.user.uid), {
-            email: email,
-            plan: "free"
-        });
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
 
-        alert("Signup success");
-    } catch(err){
-        alert(err.message);
-    }
-}
-
-window.login = async function(){
-    let email = document.getElementById("email").value;
-    let pass = document.getElementById("password").value;
-
-    try{
-        await signInWithEmailAndPassword(auth, email, pass);
-        alert("Login success");
-    } catch(err){
-        alert(err.message);
-    }
-}
-
-/* USER STATE */
-onAuthStateChanged(auth, async (user)=>{
-
-    if(user){
-        let docRef = doc(db, "users", user.uid);
-        let snap = await getDoc(docRef);
-
-        let plan = snap.exists() ? snap.data().plan : "free";
-
-        document.getElementById("status").innerText =
-        "Logged in: " + user.email + " (" + plan + ")";
-
-        loadData(plan);
-    }
-});
-
-/* SAMPLE PROPERTY DATA */
-function loadData(plan){
-
-    let data = [
-        {name:"Residensi Alpha", price:520000},
-        {name:"SkyVista Residence", price:780000},
-        {name:"Metro Heights", price:430000}
-    ];
-
-    let html = "";
-
-    data.forEach(p=>{
-        html += `
-        <div class="card">
-            <h3>${p.name}</h3>
-            <p>RM ${p.price}</p>
-            ${plan === "free" ? "<p style='color:red'>Upgrade to PRO for more insights</p>" : "<p style='color:green'>PRO unlocked insights</p>"}
-        </div>`;
+    await setDoc(doc(db, "users", userCred.user.uid), {
+      email: email,
+      plan: "free"
     });
 
-    document.getElementById("list").innerHTML = html;
+    alert("Signup success");
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+/* LOGIN */
+window.login = async function () {
+  try {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    await signInWithEmailAndPassword(auth, email, password);
+
+    alert("Login success");
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+/* USER STATE */
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+
+    let plan = snap.exists() ? snap.data().plan : "free";
+
+    document.getElementById("status").innerText =
+      "Logged in: " + user.email + " (" + plan + ")";
+
+    loadProperties(plan);
+  }
+});
+
+/* SAMPLE DATA */
+function loadProperties(plan){
+
+  let data = [
+    {name:"Residensi Alpha", price:520000},
+    {name:"SkyVista Residence", price:780000},
+    {name:"Metro Heights", price:430000}
+  ];
+
+  let html = "";
+
+  data.forEach(p=>{
+    html += `
+      <div class="card">
+        <h3>${p.name}</h3>
+        <p>RM ${p.price}</p>
+
+        ${plan === "free"
+          ? "<p style='color:red'>Free plan - limited view</p>"
+          : "<p style='color:green'>PRO unlocked</p>"
+        }
+      </div>
+    `;
+  });
+
+  document.getElementById("list").innerHTML = html;
 }
 
 </script>
