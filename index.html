@@ -59,17 +59,13 @@ margin-top:10px;
 border:none;
 border-radius:8px;
 cursor:pointer;
-font-weight:bold;
-}
-
-.primary{
 background:#2563eb;
 color:white;
+font-weight:bold;
 }
 
 .red{
 background:#ef4444;
-color:white;
 }
 
 .price{
@@ -87,26 +83,30 @@ font-weight:bold;
 </div>
 
 <!-- LOGIN -->
+
 <div id="authBox"
 class="panel"
-style="max-width:420px;margin:30px auto;">
+style="
+max-width:420px;
+margin:30px auto;
+">
 
 <h3>Login</h3>
 
-<input id="email"
+<input
+id="email"
 placeholder="Email">
 
-<input id="password"
+<input
+id="password"
 type="password"
 placeholder="Password">
 
-<button class="primary"
-onclick="signup()">
+<button onclick="signup()">
 Sign Up
 </button>
 
-<button class="primary"
-onclick="login()">
+<button onclick="login()">
 Login
 </button>
 
@@ -115,11 +115,13 @@ Login
 </div>
 
 <!-- APP -->
+
 <div id="app"
 class="container"
 style="display:none;">
 
-<button class="red"
+<button
+class="red"
 onclick="logout()">
 Logout
 </button>
@@ -127,15 +129,18 @@ Logout
 <div class="layout">
 
 <!-- LEFT -->
+
 <div class="panel">
 
 <h3>Search</h3>
 
-<input id="search"
+<input
+id="search"
 placeholder="Search"
 onkeyup="render()">
 
-<select id="typeFilter"
+<select
+id="typeFilter"
 onchange="render()">
 
 <option value="">
@@ -156,19 +161,23 @@ Landed
 
 <h3>Add Property</h3>
 
-<input id="pname"
+<input
+id="pname"
 placeholder="Name">
 
-<input id="plocation"
+<input
+id="plocation"
 placeholder="Location">
 
-<input id="ptype"
+<input
+id="ptype"
 placeholder="Type">
 
-<input id="pprice"
+<input
+id="pprice"
 placeholder="Price">
 
-<button class="primary"
+<button
 onclick="addProperty()">
 Add Property
 </button>
@@ -176,37 +185,41 @@ Add Property
 </div>
 
 <!-- CENTER -->
+
 <div>
 
 <h3>Properties</h3>
 
-<div id="list"
+<div
+id="list"
 class="grid">
 </div>
 
 </div>
 
 <!-- RIGHT -->
+
 <div class="panel">
 
 <h3>🏠 Loan Calculator</h3>
 
-<input id="loanPrice"
-placeholder="Property Price">
+<input
+id="loanPrice"
+placeholder="Price">
 
-<input id="loanDown"
-value="10"
-placeholder="Down %">
+<input
+id="loanDown"
+value="10">
 
-<input id="loanRate"
-value="4.2"
-placeholder="Rate %">
+<input
+id="loanRate"
+value="4.2">
 
-<input id="loanYear"
-value="35"
-placeholder="Years">
+<input
+id="loanYear"
+value="35">
 
-<button class="primary"
+<button
 onclick="calcLoan()">
 Calculate
 </button>
@@ -336,13 +349,11 @@ e.message;
 window.logout=
 async()=>{
 
-await signOut(
-auth
-);
+await signOut(auth);
 
 };
 
-/* LOGIN FLOW */
+/* LOGIN */
 
 onAuthStateChanged(
 auth,
@@ -350,21 +361,17 @@ async(user)=>{
 
 if(!user){
 
-authBox.style.display=
-"block";
+authBox.style.display="block";
 
-app.style.display=
-"none";
+app.style.display="none";
 
 return;
 
 }
 
-authBox.style.display=
-"none";
+authBox.style.display="none";
 
-app.style.display=
-"block";
+app.style.display="block";
 
 userStatus.innerText=
 user.email;
@@ -373,7 +380,7 @@ await load();
 
 });
 
-/* LOAD DATA */
+/* LOAD */
 
 async function load(){
 
@@ -390,35 +397,53 @@ db,
 properties=
 snap.docs.map(
 d=>({
+
 id:d.id,
-...d.data()
+
+name:
+d.data().name || "",
+
+location:
+d.data().location || "",
+
+type:
+d.data().type || "",
+
+price:
+d.data().price || 0
+
 })
 );
+
+}catch(e){
+
+console.log(e);
+
+properties=[];
+
+}
 
 if(
 properties.length===0
 ){
 
 properties=[
+
 {
 name:"Connaught One",
 location:"Cheras",
 type:"Condo",
 price:464000
 },
+
 {
 name:"Aricia Residences",
 location:"Sungai Long",
 type:"Condo",
 price:530000
 }
+
 ];
-
-}
-
-}catch(e){
-
-console.log(e);
 
 }
 
@@ -426,7 +451,7 @@ render();
 
 }
 
-/* ADD PROPERTY */
+/* ADD */
 
 window.addProperty=
 async()=>{
@@ -454,6 +479,7 @@ db,
 "properties"
 ),
 {
+
 name:
 pname.value,
 
@@ -466,15 +492,13 @@ ptype.value,
 price:
 Number(
 pprice.value
-),
+)
 
-createdAt:
-Date.now()
 }
 );
 
 alert(
-"Added successfully"
+"Added"
 );
 
 pname.value="";
@@ -500,7 +524,10 @@ window.render=
 ()=>{
 
 let keyword=
-search.value
+(
+search.value ||
+""
+)
 .toLowerCase();
 
 let type=
@@ -508,11 +535,24 @@ typeFilter.value;
 
 let filtered=
 properties.filter(
-p=>
+p=>{
 
-p.name
-.toLowerCase()
-.includes(
+let pname=
+(
+p.name ||
+""
+)
+.toLowerCase();
+
+let ptype=
+(
+p.type ||
+""
+);
+
+return(
+
+pname.includes(
 keyword
 )
 
@@ -523,10 +563,13 @@ type==""
 
 ||
 
-p.type==
+ptype==
 type
 )
 
+);
+
+}
 );
 
 list.innerHTML=
@@ -536,23 +579,22 @@ filtered.map(
 <div class="card">
 
 <h3>
-${p.name}
+${p.name || "Unnamed"}
 </h3>
 
 <p>
-${p.location}
+${p.location || "-"}
 </p>
 
 <p>
-${p.type}
+${p.type || "-"}
 </p>
 
 <p class="price">
-RM ${p.price}
+RM ${p.price || 0}
 </p>
 
 <button
-class="primary"
 onclick="
 openDetail(${index})
 ">
@@ -566,7 +608,7 @@ Analyse
 
 };
 
-/* INVESTMENT */
+/* DETAIL */
 
 window.openDetail=
 (i)=>{
@@ -575,14 +617,20 @@ let p=
 properties[i];
 
 let rent=
-p.price*0.004;
+(
+p.price||0
+)
+*0.004;
 
 let roi=
 (
 rent*12
 /
-p.price
-)*100;
+(
+p.price||1
+)
+)
+*100;
 
 detailPanel.innerHTML=`
 
