@@ -1,31 +1,117 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Property Comparison</title>
+    <title>PropertyCompare | Malaysia Property Insights</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
         body {
-            background-color: #f4f6f8;
-            font-family: Arial;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fb;
             color: #333;
         }
 
-        h1 {
-            color: #1e88e5;
+        /* HEADER */
+        .header {
+            background: #1e3a8a;
+            color: white;
+            padding: 20px 40px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            opacity: 0.8;
+        }
+
+        /* HERO */
+        .hero {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 28px;
+            color: #1e3a8a;
+        }
+
+        .hero p {
+            color: #555;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        /* CARD SECTION */
+        .container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 20px 40px;
+        }
+
+        .card {
+            background: white;
+            width: 300px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .price {
+            color: #16a34a;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .location {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* TABLE */
+        .table-section {
+            padding: 40px;
         }
 
         table {
-            background-color: white;
+            width: 100%;
             border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
         }
 
         th {
-            background-color: #1e88e5;
+            background: #1e3a8a;
             color: white;
+            padding: 12px;
         }
 
-        td, th {
-            padding: 10px;
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #777;
         }
     </style>
 
@@ -33,61 +119,80 @@
 
 <body>
 
-<h1>Malaysia Property Comparison</h1>
+    <!-- HEADER -->
+    <div class="header">
+        <h1>PropertyCompare MY</h1>
+        <p>Compare Malaysia Property Projects with Confidence</p>
+    </div>
 
-<table border="1">
-    <tr>
-        <th>Project</th>
-        <th>Price</th>
-        <th>Size</th>
-        <th>Location</th>
-    </tr>
+    <!-- HERO -->
+    <div class="hero">
+        <h2>Find the Best Property Deals in Malaysia</h2>
+        <p>
+            Compare pricing, size, and location across multiple developments.
+            Built for investors, buyers, and analysts.
+        </p>
+    </div>
 
-    <tr>
-        <td>Project A</td>
-        <td>RM500,000</td>
-        <td>750 sqft</td>
-        <td>Cheras</td>
-    </tr>
+    <!-- CARDS -->
+    <div class="container">
 
-</table>
+        <div class="card">
+            <h3>Project A</h3>
+            <p class="price">RM500,000</p>
+            <p>750 sqft</p>
+            <p class="location">📍 Cheras</p>
+        </div>
 
-</body>
-</html>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Property Project Comparison</title>
-</head>
-<body>
+        <div class="card">
+            <h3>Project B</h3>
+            <p class="price">RM650,000</p>
+            <p>850 sqft</p>
+            <p class="location">📍 Kajang</p>
+        </div>
 
-<h1>Malaysia Property Comparison Platform</h1>
+        <div class="card">
+            <h3>Project C</h3>
+            <p class="price">RM420,000</p>
+            <p>700 sqft</p>
+            <p class="location">📍 Setapak</p>
+        </div>
 
-<h2>Available Projects</h2>
+    </div>
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Project</th>
-        <th>Price</th>
-        <th>Size</th>
-        <th>Location</th>
-    </tr>
+    <!-- TABLE -->
+    <div class="table-section">
 
-    <tr>
-        <td>Project A</td>
-        <td>RM500,000</td>
-        <td>750 sqft</td>
-        <td>Cheras</td>
-    </tr>
+        <table>
+            <tr>
+                <th>Project</th>
+                <th>Price</th>
+                <th>Size</th>
+                <th>Location</th>
+            </tr>
 
-    <tr>
-        <td>Project B</td>
-        <td>RM650,000</td>
-        <td>850 sqft</td>
-        <td>Kajang</td>
-    </tr>
+            <tr>
+                <td>Project A</td>
+                <td>RM500,000</td>
+                <td>750 sqft</td>
+                <td>Cheras</td>
+            </tr>
 
-</table>
+            <tr>
+                <td>Project B</td>
+                <td>RM650,000</td>
+                <td>850 sqft</td>
+                <td>Kajang</td>
+            </tr>
+
+        </table>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        © 2026 PropertyCompare MY. All rights reserved.
+    </div>
 
 </body>
 </html>
